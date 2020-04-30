@@ -1,0 +1,3 @@
+PyQt5==5.14.2
+networkx==2.4
+matplotlib==3.2.1
