@@ -68,14 +68,17 @@ class Node:
 
 
 class Network:
-    def __init__(self, N_nodes, n_interests, random_const, random_phy_const, debug=False):
+    def __init__(self, N_common, N_influencers, n_interests, random_const, random_phy_const, debug=False):
         self.debug = debug
 
-        self.N_nodes = N_nodes
+        self.N_common = N_common
+        self.N_influencers = N_influencers
         self.nodes = {}
         self.available_id = 0
         self.n_interests = n_interests
+        self.g = Graph()
         self.generate_common(random_const, random_phy_const)
+        self.generate_influencers(random_const*2, random_phy_const)
 
     def gen_node(self, node_type):
         idx = self.available_id
@@ -85,10 +88,8 @@ class Network:
         return idx
 
     def generate_common(self, random_const, random_phy_const):
-        g = Graph()
-
-        g.add_vertices(self.N_nodes)
-        g.es["weight"] = 1.0
+        self.g.add_vertices(self.N_common)
+        self.g.es["weight"] = 1.0
 
         layout = []
 
@@ -100,16 +101,16 @@ class Network:
                 if len(edge) == 0:
                     self.nodes[idx_a].add_adj(Edge(idx_b, prox))
                     self.nodes[idx_b].add_adj(Edge(idx_a, prox))
-                    g.add_edges([(idx_a, idx_b)])
+                    self.g.add_edges([(idx_a, idx_b)])
                 else:
                     weight = np.mean([weight, edge[0].weight])
                     edge_b = list(filter(lambda x: x.dest == idx_a, self.nodes[idx_b].adj))
                     edge[0].weight = weight
                     edge_b[0].weight = weight
-                g[idx_a, idx_b] = weight
+                self.g[idx_a, idx_b] = weight
 
         n = 0
-        while n < self.N_nodes:
+        while n < self.N_common:
             idx = self.gen_node(NodeType.Common)
             layout.append((self.nodes[idx].position_x, self.nodes[idx].position_y))
 
@@ -123,31 +124,64 @@ class Network:
                 add_proximity_edge(idx, b, phys_dist, random_phy_const)
             n += 1
 
-        """
-        DEBUG STUFF
-        """
+        
+    def generate_influencers(self, random_const, random_phy_const):
+        self.g.add_vertices(self.N_influencers)
+        self.g.es["weight"] = 1.0
 
-        if self.debug:
-            clusters = g.community_multilevel()
-            member = clusters.membership
-            new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(len(clusters))]
+        def add_proximity_edge(idx_a, idx_b, dist, random_const):
+            prox = (1 - dist)
+            if dist < random_const:
+                edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
+                weight = prox
+                if len(edge) == 0:
+                    self.nodes[idx_a].add_adj(Edge(idx_b, prox))
+                    self.nodes[idx_b].add_adj(Edge(idx_a, prox))
+                    self.g.add_edges([(idx_a, idx_b)])
+                else:
+                    weight = np.mean([weight, edge[0].weight])
+                    edge_b = list(filter(lambda x: x.dest == idx_a, self.nodes[idx_b].adj))
+                    edge[0].weight = weight
+                    edge_b[0].weight = weight
+                self.g[idx_a, idx_b] = weight
 
-            vcolors = {v: new_cmap[i] for i, c in enumerate(clusters) for v in c}
-            g.vs["color"] = [vcolors[v] for v in g.vs.indices]
+        n = 0
+        while n < self.N_influencers:
+            idx = self.gen_node(NodeType.Influencer)
 
-            g.vs["label"] = [v for v in g.vs.indices]
-            g.es["label"] = np.around(g.es["weight"], decimals=1)
+            for b in self.nodes.keys():
+                if idx == b:
+                    continue
+                dist = self.nodes[idx].compute_distance(self.nodes[b])
+                add_proximity_edge(idx, b, dist, random_const)
 
-            deg = []
-            for i in range(self.N_nodes):
-                print(self.nodes[i])
-                deg.append(len(self.nodes[i].adj))
-            print("AVG DEG: {}".format(sum(deg) / len(deg)))
+                phys_dist = self.nodes[idx].compute_physical_distance(self.nodes[b])
+                add_proximity_edge(idx, b, phys_dist, random_phy_const)
+            n += 1
+        
+    def plot(self):
+        clusters = self.g.community_multilevel()
+        new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(len(clusters))]
 
-            plt.hist(deg)
-            plt.show()
-            plot(g, layout=Layout(layout))
+        vcolors = {v: new_cmap[i] for i, c in enumerate(clusters) for v in c}
+        self.g.vs["color"] = [vcolors[v] for v in self.g.vs.indices]
+
+        self.g.vs["label"] = [v for v in self.g.vs.indices]
+        self.g.es["label"] = np.around(self.g.es["weight"], decimals=1)
+
+        deg = []
+        layout = []
+        for i in range(self.N_common + self.N_influencers):
+            print(self.nodes[i])
+            layout.append((self.nodes[i].position_x, self.nodes[i].position_y))
+            deg.append(len(self.nodes[i].adj))
+        print("AVG DEG: {}".format(sum(deg) / len(deg)))
+
+        plt.hist(deg)
+        plt.show()
+        plot(self.g, layout=Layout(layout))
 
 
 if __name__ == "__main__":
-    a = Network(100, 4, random_const=0.15, random_phy_const=0.1, debug=True)
+    a = Network(100, 5, 4, random_const=0.15, random_phy_const=0.1, debug=True)
+    a.plot()
