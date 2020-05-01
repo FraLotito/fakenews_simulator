@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import IntEnum
 import random
 import math
 import numpy as np
@@ -15,11 +15,11 @@ def norm_sample(n=None):
     """
     Sample from a normal distribution centered in 0.5. Results are limited in [0, 1]
     """
-    norm_vals = np.random.normal(0.5, 0.2, n)  # sample from a normal distribution
+    norm_vals = np.random.normal(0.5, 0.3, n)  # sample from a normal distribution
     return np.clip(norm_vals, 0, 1)  # limit the results into [0, 1]
 
 
-class NodeType(Enum):
+class NodeType(IntEnum):
     Common = 0,
     Conspirator = 1,
     Influencer = 2,
@@ -78,7 +78,7 @@ class Network:
         self.n_interests = n_interests
         self.g = Graph()
         self.generate_common(random_const, random_phy_const)
-        self.generate_influencers(random_const*2, random_phy_const)
+        self.generate_influencers(random_const*2, random_phy_const*2)
 
     def gen_node(self, node_type):
         idx = self.available_id
@@ -103,7 +103,7 @@ class Network:
                     self.nodes[idx_b].add_adj(Edge(idx_a, prox))
                     self.g.add_edges([(idx_a, idx_b)])
                 else:
-                    weight = np.mean([weight, edge[0].weight])
+                    weight = np.min([weight, edge[0].weight])
                     edge_b = list(filter(lambda x: x.dest == idx_a, self.nodes[idx_b].adj))
                     edge[0].weight = weight
                     edge_b[0].weight = weight
@@ -124,7 +124,8 @@ class Network:
                 add_proximity_edge(idx, b, phys_dist, random_phy_const)
             n += 1
 
-        
+    
+    # TODO: direct edges
     def generate_influencers(self, random_const, random_phy_const):
         self.g.add_vertices(self.N_influencers)
         self.g.es["weight"] = 1.0
@@ -161,9 +162,9 @@ class Network:
         
     def plot(self):
         clusters = self.g.community_multilevel()
-        new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(len(clusters))]
+        new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(5)]
 
-        vcolors = {v: new_cmap[i] for i, c in enumerate(clusters) for v in c}
+        vcolors = {key: new_cmap[int(self.nodes[key].type)] for key in self.nodes.keys()}
         self.g.vs["color"] = [vcolors[v] for v in self.g.vs.indices]
 
         self.g.vs["label"] = [v for v in self.g.vs.indices]
@@ -183,5 +184,5 @@ class Network:
 
 
 if __name__ == "__main__":
-    a = Network(100, 5, 4, random_const=0.15, random_phy_const=0.1, debug=True)
+    a = Network(20, 5, 4, random_const=0.1, random_phy_const=0.15, debug=True)
     a.plot()
