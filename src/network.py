@@ -2,6 +2,7 @@ from enum import Enum
 import random
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 
 from igraph import *
 
@@ -74,7 +75,7 @@ class Network:
         self.nodes = {}
         self.available_id = 0
         self.n_interests = n_interests
-        self.generate(random_const, random_phy_const)
+        self.generate_common(random_const, random_phy_const)
 
     def gen_node(self, node_type):
         idx = self.available_id
@@ -83,16 +84,17 @@ class Network:
         self.nodes[node.id] = node
         return idx
 
-    def generate(self, random_const, random_phy_const):
+    def generate_common(self, random_const, random_phy_const):
         g = Graph()
 
         g.add_vertices(self.N_nodes)
         g.es["weight"] = 1.0
 
+        layout = []
+
         def add_proximity_edge(idx_a, idx_b, dist, random_const):
             prox = (1 - dist)
-            p = random.uniform(0, 1)
-            if p < prox * random_const:
+            if dist < random_const:
                 edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
                 weight = prox
                 if len(edge) == 0:
@@ -109,6 +111,7 @@ class Network:
         n = 0
         while n < self.N_nodes:
             idx = self.gen_node(NodeType.Common)
+            layout.append((self.nodes[idx].position_x, self.nodes[idx].position_y))
 
             for b in self.nodes.keys():
                 if idx == b:
@@ -120,22 +123,31 @@ class Network:
                 add_proximity_edge(idx, b, phys_dist, random_phy_const)
             n += 1
 
-        clusters = g.community_multilevel()
-        member = clusters.membership
-        new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(len(clusters))]
-
-        vcolors = {v: new_cmap[i] for i, c in enumerate(clusters) for v in c}
-        g.vs["color"] = [vcolors[v] for v in g.vs.indices]
-
-        g.vs["label"] = [v for v in g.vs.indices]
-        g.es["label"] = np.around(g.es["weight"], decimals=1)
-
-        for i in range(self.N_nodes):
-            print(self.nodes[i])
+        """
+        DEBUG STUFF
+        """
 
         if self.debug:
-            plot(g, layout='circle')
+            clusters = g.community_multilevel()
+            member = clusters.membership
+            new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(len(clusters))]
+
+            vcolors = {v: new_cmap[i] for i, c in enumerate(clusters) for v in c}
+            g.vs["color"] = [vcolors[v] for v in g.vs.indices]
+
+            g.vs["label"] = [v for v in g.vs.indices]
+            g.es["label"] = np.around(g.es["weight"], decimals=1)
+
+            deg = []
+            for i in range(self.N_nodes):
+                print(self.nodes[i])
+                deg.append(len(self.nodes[i].adj))
+            print("AVG DEG: {}".format(sum(deg) / len(deg)))
+
+            plt.hist(deg)
+            plt.show()
+            plot(g, layout=Layout(layout))
 
 
 if __name__ == "__main__":
-    a = Network(20, 4, random_const=0.15, random_phy_const=0.1, debug=True)
+    a = Network(100, 4, random_const=0.15, random_phy_const=0.1, debug=True)

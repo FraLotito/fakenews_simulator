@@ -36,7 +36,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def draw_network(self):
         self.figure.clf()
 
-        self.simulator = Simulator(20, 4, 0.15, 0.1)
+        self.simulator = Simulator(100, 4, 0.1, 0.1)
 
         G = nx.Graph()
 
@@ -49,7 +49,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             for b in node.adj:
                 G.add_edge(a, b.dest, weight=b.weight)
 
-        nx.draw(G, pos=pos, with_labels=True)
+        nx.draw(G, pos=pos, with_labels=True, font_size=8, node_size=150, node_color="skyblue", edge_color="grey")
         self.network_canvas.draw_idle()
 
 
