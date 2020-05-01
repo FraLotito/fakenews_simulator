@@ -5,6 +5,8 @@ import sys
 from matplotlib.backends.qt_compat import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
 
+from src.simulator import Simulator
+
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -19,6 +21,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.network_canvas = FigureCanvas(self.figure)
         layout.addWidget(self.network_canvas)
         self.addToolBar(NavigationToolbar(self.network_canvas, self))
+        self.network_canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Add buttons controls
         btn_layout = QtWidgets.QVBoxLayout()
@@ -28,20 +31,25 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         graph_btn.clicked.connect(self.draw_network)
         btn_layout.addWidget(graph_btn)
 
+        self.simulator = None
+
     def draw_network(self):
         self.figure.clf()
-        z = [5, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1]
 
-        G = nx.configuration_model(z)
-        degree_sequence = [d for n, d in G.degree()]
-        hist = {}
-        for d in degree_sequence:
-            if d in hist:
-                hist[d] += 1
-            else:
-                hist[d] = 1
+        self.simulator = Simulator(20, 4, 0.15, 0.1)
 
-        nx.draw(G)
+        G = nx.Graph()
+
+        pos = {}
+        for n, node in self.simulator.network.nodes.items():
+            G.add_node(n)
+            pos[n] = [node.position_x, node.position_y]
+
+        for a, node in self.simulator.network.nodes.items():
+            for b in node.adj:
+                G.add_edge(a, b.dest, weight=b.weight)
+
+        nx.draw(G, pos=pos, with_labels=True)
         self.network_canvas.draw_idle()
 
 

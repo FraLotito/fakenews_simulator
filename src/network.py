@@ -67,7 +67,9 @@ class Node:
 
 
 class Network:
-    def __init__(self, N_nodes, n_interests, random_const, random_phy_const):
+    def __init__(self, N_nodes, n_interests, random_const, random_phy_const, debug=False):
+        self.debug = debug
+
         self.N_nodes = N_nodes
         self.nodes = {}
         self.available_id = 0
@@ -131,8 +133,9 @@ class Network:
         for i in range(self.N_nodes):
             print(self.nodes[i])
 
-        plot(g, layout='circle')
+        if self.debug:
+            plot(g, layout='circle')
 
 
 if __name__ == "__main__":
-    a = Network(20, 4, random_const=0.15, random_phy_const=0.1)
+    a = Network(20, 4, random_const=0.15, random_phy_const=0.1, debug=True)
