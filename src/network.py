@@ -52,6 +52,11 @@ class Node:
     def compute_distance(self, node_b):
         return euclidean_distance(self.interests, node_b.interests) / math.sqrt(len(self.interests))
 
+    def compute_physical_distance(self, node_b):
+        a = np.array([self.position_x, self.position_y])
+        b = np.array([node_b.position_x, node_b.position_y])
+        return euclidean_distance(a, b) / math.sqrt(2)
+
     def __str__(self):
         return '{} - deg: {}\n' \
                '\tinterests: {}\n' \
@@ -62,12 +67,12 @@ class Node:
 
 
 class Network:
-    def __init__(self, N_nodes, n_interests, random_const):
+    def __init__(self, N_nodes, n_interests, random_const, random_phy_const):
         self.N_nodes = N_nodes
         self.nodes = {}
         self.available_id = 0
         self.n_interests = n_interests
-        self.generate(random_const)
+        self.generate(random_const, random_phy_const)
 
     def gen_node(self, node_type):
         idx = self.available_id
@@ -76,11 +81,28 @@ class Network:
         self.nodes[node.id] = node
         return idx
 
-    def generate(self, random_const):
+    def generate(self, random_const, random_phy_const):
         g = Graph()
 
         g.add_vertices(self.N_nodes)
         g.es["weight"] = 1.0
+
+        def add_proximity_edge(idx_a, idx_b, dist, random_const):
+            prox = (1 - dist)
+            p = random.uniform(0, 1)
+            if p < prox * random_const:
+                edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
+                weight = prox
+                if len(edge) == 0:
+                    self.nodes[idx_a].add_adj(Edge(idx_b, prox))
+                    self.nodes[idx_b].add_adj(Edge(idx_a, prox))
+                    g.add_edges([(idx_a, idx_b)])
+                else:
+                    weight = np.mean([weight, edge[0].weight])
+                    edge_b = list(filter(lambda x: x.dest == idx_a, self.nodes[idx_b].adj))
+                    edge[0].weight = weight
+                    edge_b[0].weight = weight
+                g[idx_a, idx_b] = weight
 
         n = 0
         while n < self.N_nodes:
@@ -90,13 +112,10 @@ class Network:
                 if idx == b:
                     continue
                 dist = self.nodes[idx].compute_distance(self.nodes[b])
-                prox = (1 - dist)
-                p = random.uniform(0, 1)
-                if p < prox * random_const:
-                    self.nodes[idx].add_adj(Edge(b, prox))
-                    self.nodes[b].add_adj(Edge(idx, prox))
-                    g.add_edges([(idx, b)])
-                    g[idx, b] = prox
+                add_proximity_edge(idx, b, dist, random_const)
+
+                phys_dist = self.nodes[idx].compute_physical_distance(self.nodes[b])
+                add_proximity_edge(idx, b, phys_dist, random_phy_const)
             n += 1
 
         clusters = g.community_multilevel()
@@ -116,4 +135,4 @@ class Network:
 
 
 if __name__ == "__main__":
-    a = Network(20, 4, 0.2)
+    a = Network(20, 4, random_const=0.15, random_phy_const=0.1)
