@@ -75,12 +75,21 @@ class Network:
                     g.add_edges([(idx, b)])
             n += 1
 
-        plot(g)
+        #plot(g)
+        clusters = g.community_multilevel()
+        member = clusters.membership
+        new_cmap = ['#'+''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(len(clusters))]
+
+        vcolors = {v: new_cmap[i] for i, c in enumerate(clusters) for v in c}
+        g.vs["color"] = [vcolors[v] for v in g.vs.indices]
+
+        plot(g, layout="circle")
+
         for i in range(self.N_nodes):
             print("a1: {}, a2: {}, deg: {}".format(self.nodes[i].a1, self.nodes[i].a2, len(self.nodes[i].adj)))
 
 
 
 if __name__ == "__main__":
-    a = Network(100, 0.2)
+    a = Network(20, 0.2)
 
