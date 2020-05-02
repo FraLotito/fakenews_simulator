@@ -1,4 +1,4 @@
-from network import Network, Node
+from .network import Network, Node
 import math
 
 

@@ -1,3 +1,5 @@
 PyQt5==5.14.2
 networkx==2.4
 matplotlib==3.2.1
+numpy~=1.18.3
+mplcursors~=0.3

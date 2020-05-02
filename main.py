@@ -2,6 +2,7 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 import matplotlib.pyplot as plt
 import networkx as nx
+import mplcursors
 import sys
 from matplotlib.backends.qt_compat import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
@@ -112,15 +113,27 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         pos = {}
         color_map = []
         for n, node in self.simulator.network.nodes.items():
-            G.add_node(n)
+            G.add_node(n, node=node)
             pos[n] = [node.position_x, node.position_y]
             color_map.append(self.node_color[node.type])
 
         for a, node in self.simulator.network.nodes.items():
             for b in node.adj:
-                G.add_edge(a, b.dest, weight=b.weight)
+                G.add_edge(a, b.dest, edge=b)
 
         nx.draw(G, pos=pos, with_labels=True, font_size=8, node_size=150, node_color=color_map, edge_color="grey")
+
+        def annotate(sel):
+            if not isinstance(sel.target.index, tuple):
+                node = G.nodes[sel.target.index]['node']
+                node_type = str(node.type).split('.')[1]
+                return sel.annotation.set_text("Node: {}\nType: {}".format(sel.target.index, node_type))
+            else:
+                edge = list(G.edges.data())[sel.target.index[0]]
+                return sel.annotation.set_text("{} - {}\nWeight: {:.3f}".format(edge[0], edge[1], edge[2]['edge'].weight))
+
+        mplcursors.cursor(hover=True).connect("add", annotate)
+
         self.network_canvas.draw_idle()
 
 
