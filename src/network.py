@@ -95,8 +95,8 @@ class Network:
 
         def add_proximity_edge(idx_a, idx_b, dist, random_const):
             prox = (1 - dist)
-            if dist < random_const:
-                edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
+            edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
+            if dist < random_const or len(edge) > 0:
                 weight = prox
                 if len(edge) == 0:
                     self.nodes[idx_a].add_adj(Edge(idx_b, prox))
@@ -117,17 +117,20 @@ class Network:
             for b in self.nodes.keys():
                 if idx == b:
                     continue
-                dist = self.nodes[idx].compute_distance(self.nodes[b])
-                add_proximity_edge(idx, b, dist, random_const)
-
                 phys_dist = self.nodes[idx].compute_physical_distance(self.nodes[b])
                 add_proximity_edge(idx, b, phys_dist, random_phy_const)
             n += 1
-    
+
+        for a in self.nodes.keys():
+            for b in self.nodes.keys():
+                if a == b:
+                    continue
+                dist = self.nodes[a].compute_distance(self.nodes[b])
+                add_proximity_edge(a, b, dist, random_const)
+
     # TODO: direct edges
     def generate_influencers(self, random_const, random_phy_const):
         self.g.add_vertices(self.N_influencers)
-        self.g.es["weight"] = 1.0
 
         def add_proximity_edge(idx_a, idx_b, dist, random_const):
             prox = (1 - dist)
