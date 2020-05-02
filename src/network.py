@@ -68,21 +68,21 @@ class Node:
 
 
 class Network:
-    def __init__(self, N_common, N_influencers, n_interests, random_const, random_phy_const, debug=False):
+    def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const, debug=False):
         self.debug = debug
 
         self.N_common = N_common
         self.N_influencers = N_influencers
         self.nodes = {}
         self.available_id = 0
-        self.n_interests = n_interests
+        self.N_interests = N_interests
         self.g = Graph()
         self.generate_common(random_const, random_phy_const)
         self.generate_influencers(random_const*2, random_phy_const*2)
 
     def gen_node(self, node_type):
         idx = self.available_id
-        node = Node(idx, node_type, self.n_interests)
+        node = Node(idx, node_type, self.N_interests)
         self.available_id += 1
         self.nodes[node.id] = node
         return idx
@@ -123,7 +123,6 @@ class Network:
                 phys_dist = self.nodes[idx].compute_physical_distance(self.nodes[b])
                 add_proximity_edge(idx, b, phys_dist, random_phy_const)
             n += 1
-
     
     # TODO: direct edges
     def generate_influencers(self, random_const, random_phy_const):
