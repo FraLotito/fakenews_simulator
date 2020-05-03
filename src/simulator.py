@@ -56,12 +56,16 @@ class Simulator:
         worst_node, _ = self.find_worst_node()
         self.first_population_queue(worst_node)
         time = 0
-        while time < 1000:
+        print("WORST NODE: ID {}, DEG: {}".format(worst_node, len(self.network.nodes[worst_node].adj)))
+        while time < 5000:
             t, node_id = self.events_queue.get()
             time = t
-            status = self.network.nodes[node_id].update() or worst_node == node_id 
+            status = self.network.nodes[node_id].update() or worst_node == node_id
+            #print("VISITED NODE: {}, {}".format(node_id, status)) 
             if status:
                 score = self.network.nodes[node_id].score
+                #print("SCORE: {}".format(score))
+                #print("EDGES: {}".format(self.network.nodes[node_id].adj))
                 for edge in self.network.nodes[node_id].adj:
                     threshold = abs(score)
                     p = uniform(0, 1)
@@ -69,7 +73,7 @@ class Simulator:
                         dest = edge.dest
                         weight = edge.weight
                         self.propagate(dest, score, weight)
-            self.events_queue.put((t + expovariate(1/4), node_id))
+            self.events_queue.put((time + expovariate(1/3), node_id))
             
             
 
@@ -79,6 +83,9 @@ class Simulator:
         else:
             En = self.engagement_news * 0.5
         message = En * score * weight
-        #print(message)
+        if message < - 1:
+            message = -1
+        elif message > 1:
+            message = 1
         self.network.nodes[dest].message_queue.append(message)
 

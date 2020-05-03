@@ -115,7 +115,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         for n, node in self.simulator.network.nodes.items():
             G.add_node(n)
             pos[n] = [node.position_x, node.position_y]
-            color_map.append(self.node_color[node.type])
+            #color_map.append(self.node_color[node.type])
+            if node.score < 0.5 and node.score > -0.5:
+                color_map.append("skyblue")
+            elif node.score > 0.5:
+                color_map.append("tomato")
+            else:
+                color_map.append("gold")
 
         edge_labels = []
         for a, node in self.simulator.network.nodes.items():

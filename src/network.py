@@ -48,11 +48,7 @@ class Node:
 
         self.position_x = np.random.uniform(0, 1)
         self.position_y = np.random.uniform(0, 1)
-
         self.message_queue = []
-
-        self.a = 2
-        self.b = 1
 
     def update(self):
         s = sum(self.message_queue)
@@ -60,7 +56,11 @@ class Node:
         self.message_queue = []
         if l > 0:
             avg = s / l
-            self.score = (self.a * self.score + self.b * avg) / (self.a + self.b)
+            self.score += avg
+            if self.score > 1:
+                self.score = 1
+            elif self.score < - 1:
+                self.score = -1
             return True
         else:
             return False
