@@ -60,9 +60,10 @@ class Node:
         self.message_queue = []
         if l > 0:
             avg = s / l
+            self.score = (self.a * self.score + self.b * avg) / (self.a + self.b)
+            return True
         else:
-            avg = 0
-        self.score = (self.a * self.score + self.b * avg) / (self.a + self.b)
+            return False
 
     def add_adj(self, edge):
         self.adj.append(edge)

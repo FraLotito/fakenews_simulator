@@ -23,6 +23,7 @@ class Simulator:
         s = 0
         for i in range(self.N):
             s += self.network.nodes[i].score
+            print(self.network.nodes[i].score)
         print("AVG: {}".format(s / self.N))
 
     def first_population_queue(self, worst_node):
@@ -58,18 +59,23 @@ class Simulator:
         while time < 1000:
             t, node_id = self.events_queue.get()
             time = t
-            self.network.nodes[node_id].update() 
-            score = self.network.nodes[node_id].score
-            for edge in self.network.nodes[node_id].adj:
-                dest = edge.dest
-                weight = edge.weight
-                self.propagate(dest, score, weight)
+            status = self.network.nodes[node_id].update() or worst_node == node_id 
+            if status:
+                score = self.network.nodes[node_id].score
+                for edge in self.network.nodes[node_id].adj:
+                    dest = edge.dest
+                    weight = edge.weight
+                    self.propagate(dest, score, weight)
             self.events_queue.put((t + expovariate(1/4), node_id))
             
             
 
     def propagate(self, dest, score, weight):
-        En = self.engagement_news
+        if score > 0:
+            En = self.engagement_news
+        else:
+            En = self.engagement_news * 0.5
         message = En * score * weight
+        #print(message)
         self.network.nodes[dest].message_queue.append(message)
 
