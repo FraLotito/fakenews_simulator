@@ -136,7 +136,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 idx = ind[0]
                 node = self.simulator.network.nodes[idx]
                 node_type = str(node.type).split('.')[1]
-                return "Node: {}\nType: {}".format(idx, node_type)
+                node_score = str(node.score)
+                return "Node: {}\nType: {}\nScore: {}".format(idx, node_type, node_score)
 
         datacursor(draggable=True, formatter=annotate_edges)
 

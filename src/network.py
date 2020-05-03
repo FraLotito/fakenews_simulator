@@ -11,12 +11,12 @@ def euclidean_distance(a, b):
     return np.linalg.norm(a - b)
 
 
-def norm_sample(n=None):
+def norm_sample(avg=0, var=0.4, n=None):
     """
     Sample from a normal distribution centered in 0.5. Results are limited in [0, 1]
     """
-    norm_vals = np.random.normal(0.5, 0.3, n)  # sample from a normal distribution
-    return np.clip(norm_vals, 0, 1)  # limit the results into [0, 1]
+    norm_vals = np.random.normal(avg, var, n)  # sample from a normal distribution
+    return np.clip(norm_vals, -1, 1)  # limit the results into [0, 1]
 
 
 class NodeType(IntEnum):
@@ -40,13 +40,25 @@ class Node:
         self.type = node_type
         self.adj = []
 
-        self.interests = norm_sample(n_interests)
+        self.score = norm_sample(avg=0, var=0.4)
+        self.initial_score = self.score
 
-        self.education_rate = norm_sample()
-        self.reshare_rate = norm_sample()
+        self.interests = norm_sample(n=n_interests)
+        np.append(self.interests, self.score)
 
         self.position_x = np.random.uniform(0, 1)
         self.position_y = np.random.uniform(0, 1)
+
+        self.message_queue = []
+
+    def visit_queue(self):
+        s = sum(self.message_queue)
+        l = len(self.message_queue)
+        self.message_queue = []
+        if l > 0:
+            return s / l
+        else:
+            return 0
 
     def add_adj(self, edge):
         self.adj.append(edge)
@@ -62,9 +74,9 @@ class Node:
     def __str__(self):
         return '{} - deg: {}\n' \
                '\tinterests: {}\n' \
-               '\teducation_rt: {}, reshare_rt: {}\n' \
+               '\tscore: {}\n' \
                '\tx: {} y: {}'.format(
-                self.id, len(self.adj), self.interests, self.education_rate, self.reshare_rate,
+                self.id, len(self.adj), self.interests, self.score,
                 self.position_x, self.position_y)
 
 
@@ -172,17 +184,28 @@ class Network:
 
         deg = []
         layout = []
+        score = []
         for i in range(self.N_common + self.N_influencers):
             print(self.nodes[i])
             layout.append((self.nodes[i].position_x, self.nodes[i].position_y))
             deg.append(len(self.nodes[i].adj))
+            score.append(self.nodes[i].score)
         print("AVG DEG: {}".format(sum(deg) / len(deg)))
 
-        plt.hist(deg)
-        plt.show()
-        plot(self.g, layout=Layout(layout))
+        #plt.hist(deg)
+        #plt.show()
+        #plot(self.g, layout=Layout(layout))
+        cont = 0
+        for i in score:
+            if i > 0.8:
+                print(i)
+            elif i < -0.8:
+                print(i)
+            elif i < 0.5 and i > -0.5:
+                cont+=1
+        print(cont)
 
 
 if __name__ == "__main__":
-    a = Network(20, 5, 4, random_const=0.1, random_phy_const=0.15)
+    a = Network(100, 5, 5, random_const=0.1, random_phy_const=0.1)
     a.plot()
