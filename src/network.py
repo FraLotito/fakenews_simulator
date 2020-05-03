@@ -68,15 +68,13 @@ class Node:
 
 
 class Network:
-    def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const, debug=False):
-        self.debug = debug
-
+    def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const):
         self.N_common = N_common
         self.N_influencers = N_influencers
         self.nodes = {}
         self.available_id = 0
         self.N_interests = N_interests
-        self.g = Graph()
+        self.g = Graph(directed=True)
         self.generate_common(random_const, random_phy_const)
         self.generate_influencers(random_const*2, random_phy_const*2)
 
@@ -128,7 +126,6 @@ class Network:
                 dist = self.nodes[a].compute_distance(self.nodes[b])
                 add_proximity_edge(a, b, dist, random_const)
 
-    # TODO: direct edges
     def generate_influencers(self, random_const, random_phy_const):
         self.g.add_vertices(self.N_influencers)
 
@@ -139,13 +136,13 @@ class Network:
                 weight = prox
                 if len(edge) == 0:
                     self.nodes[idx_a].add_adj(Edge(idx_b, prox))
-                    self.nodes[idx_b].add_adj(Edge(idx_a, prox))
+                    #self.nodes[idx_b].add_adj(Edge(idx_a, prox))
                     self.g.add_edges([(idx_a, idx_b)])
                 else:
                     weight = np.mean([weight, edge[0].weight])
                     edge_b = list(filter(lambda x: x.dest == idx_a, self.nodes[idx_b].adj))
                     edge[0].weight = weight
-                    edge_b[0].weight = weight
+                    #edge_b[0].weight = weight
                 self.g[idx_a, idx_b] = weight
 
         n = 0
@@ -163,7 +160,7 @@ class Network:
             n += 1
         
     def plot(self):
-        clusters = self.g.community_multilevel()
+        #clusters = self.g.community_multilevel()
         new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(5)]
 
         vcolors = {key: new_cmap[int(self.nodes[key].type)] for key in self.nodes.keys()}
@@ -186,5 +183,5 @@ class Network:
 
 
 if __name__ == "__main__":
-    a = Network(20, 5, 4, random_const=0.1, random_phy_const=0.15, debug=True)
+    a = Network(20, 5, 4, random_const=0.1, random_phy_const=0.15)
     a.plot()

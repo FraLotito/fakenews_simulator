@@ -108,7 +108,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=4,
                                    random_const=0.1, random_phy_const=0.1)
 
-        G = nx.Graph()
+        G = nx.DiGraph()
 
         pos = {}
         color_map = []
