@@ -28,7 +28,8 @@ class NodeType(IntEnum):
 
 
 class Edge:
-    def __init__(self, dest, weight):
+    def __init__(self, start, dest, weight):
+        self.start = start
         self.dest = dest
         self.weight = weight
 
@@ -97,8 +98,8 @@ class Network:
             if dist < random_const or len(edge) > 0:
                 weight = prox
                 if len(edge) == 0:
-                    self.nodes[idx_a].add_adj(Edge(idx_b, prox))
-                    self.nodes[idx_b].add_adj(Edge(idx_a, prox))
+                    self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, prox))
+                    self.nodes[idx_b].add_adj(Edge(idx_b, idx_a, prox))
                     self.g.add_edges([(idx_a, idx_b)])
                 else:
                     weight = np.min([weight, edge[0].weight])
@@ -135,7 +136,7 @@ class Network:
                 edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
                 weight = prox
                 if len(edge) == 0:
-                    self.nodes[idx_a].add_adj(Edge(idx_b, prox))
+                    self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, prox))
                     #self.nodes[idx_b].add_adj(Edge(idx_a, prox))
                     self.g.add_edges([(idx_a, idx_b)])
                 else:

@@ -2,7 +2,7 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 import matplotlib.pyplot as plt
 import networkx as nx
-import mplcursors
+from mpldatacursor import datacursor
 import sys
 from matplotlib.backends.qt_compat import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
@@ -113,26 +113,32 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         pos = {}
         color_map = []
         for n, node in self.simulator.network.nodes.items():
-            G.add_node(n, node=node)
+            G.add_node(n)
             pos[n] = [node.position_x, node.position_y]
             color_map.append(self.node_color[node.type])
 
+        edge_labels = []
         for a, node in self.simulator.network.nodes.items():
             for b in node.adj:
-                G.add_edge(a, b.dest, edge=b)
+                G.add_edge(a, b.dest)
+                edge_labels.append(b)
 
         nx.draw(G, pos=pos, with_labels=True, font_size=8, node_size=150, node_color=color_map, edge_color="grey")
 
-        def annotate(sel):
-            if not isinstance(sel.target.index, tuple):
-                node = G.nodes[sel.target.index]['node']
-                node_type = str(node.type).split('.')[1]
-                return sel.annotation.set_text("Node: {}\nType: {}".format(sel.target.index, node_type))
-            else:
-                edge = list(G.edges.data())[sel.target.index[0]]
-                return sel.annotation.set_text("{} - {}\nWeight: {:.3f}".format(edge[0], edge[1], edge[2]['edge'].weight))
+        edges_artists = self.figure.get_axes()[0].patches
 
-        mplcursors.cursor(hover=True).connect("add", annotate)
+        def annotate_edges(event, ind, **kargs):
+            if ind is None:
+                idx = edges_artists.index(event.artist)
+                edge = edge_labels[idx]
+                return "{} - {}\nWeight: {:.3f}".format(edge.start, edge.dest, edge.weight)
+            else:
+                idx = ind[0]
+                node = self.simulator.network.nodes[idx]
+                node_type = str(node.type).split('.')[1]
+                return "Node: {}\nType: {}".format(idx, node_type)
+
+        datacursor(draggable=True, formatter=annotate_edges)
 
         self.network_canvas.draw_idle()
 
