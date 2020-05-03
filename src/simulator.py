@@ -7,9 +7,23 @@ from random import expovariate, shuffle
 class Simulator:
     def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const):
         self.N = N_common + N_influencers
+        self.engagement_news = 1
         self.network = Network(N_common, N_influencers, N_interests, random_const, random_phy_const)
         self.events_queue = PriorityQueue()
+
+        print("Computing initial avg..")
+        s = 0
+        for i in range(self.N):
+            s += self.network.nodes[i].score
+        print("AVG: {}".format(s / self.N))
+
         self.simulate()
+
+        print("Computing ending avg..")
+        s = 0
+        for i in range(self.N):
+            s += self.network.nodes[i].score
+        print("AVG: {}".format(s / self.N))
 
     def first_population_queue(self, worst_node):
         idx_0 = worst_node
@@ -38,19 +52,24 @@ class Simulator:
 
 
     def simulate(self):
-        worst_node, worst_value = self.find_worst_node())
+        worst_node, _ = self.find_worst_node()
         self.first_population_queue(worst_node)
+        time = 0
+        while time < 1000:
+            t, node_id = self.events_queue.get()
+            time = t
+            self.network.nodes[node_id].update() 
+            score = self.network.nodes[node_id].score
+            for edge in self.network.nodes[node_id].adj:
+                dest = edge.dest
+                weight = edge.weight
+                self.propagate(dest, score, weight)
+            self.events_queue.put((t + expovariate(1/4), node_id))
+            
+            
 
-    def propagate(self, a : Node, b : Node):
-        En = 1
-        d = 0.9
-        mb = 1
-        alpha = 1
-        beta = 2
-        return En * a.education_rate * ((alpha * d + beta * mb) / (alpha + beta))
+    def propagate(self, dest, score, weight):
+        En = self.engagement_news
+        message = En * score * weight
+        self.network.nodes[dest].message_queue.append(message)
 
-if __name__ == "__main__":
-    pass
-    #a = Node(1, 1, 5)
-    #b = Node(1, 1, 5)
-    #print(irradiate(a, b))

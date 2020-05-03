@@ -51,14 +51,18 @@ class Node:
 
         self.message_queue = []
 
-    def visit_queue(self):
+        self.a = 2
+        self.b = 1
+
+    def update(self):
         s = sum(self.message_queue)
         l = len(self.message_queue)
         self.message_queue = []
         if l > 0:
-            return s / l
+            avg = s / l
         else:
-            return 0
+            avg = 0
+        self.score = (self.a * self.score + self.b * avg) / (self.a + self.b)
 
     def add_adj(self, edge):
         self.adj.append(edge)
