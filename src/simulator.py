@@ -1,7 +1,7 @@
 from .network import Network, Node
 import math
 from queue import PriorityQueue
-from random import expovariate, shuffle
+from random import expovariate, shuffle, uniform
 
 
 class Simulator:
@@ -23,7 +23,7 @@ class Simulator:
         s = 0
         for i in range(self.N):
             s += self.network.nodes[i].score
-            print(self.network.nodes[i].score)
+            #print(self.network.nodes[i].score)
         print("AVG: {}".format(s / self.N))
 
     def first_population_queue(self, worst_node):
@@ -63,9 +63,12 @@ class Simulator:
             if status:
                 score = self.network.nodes[node_id].score
                 for edge in self.network.nodes[node_id].adj:
-                    dest = edge.dest
-                    weight = edge.weight
-                    self.propagate(dest, score, weight)
+                    threshold = abs(score)
+                    p = uniform(0, 1)
+                    if p < threshold:
+                        dest = edge.dest
+                        weight = edge.weight
+                        self.propagate(dest, score, weight)
             self.events_queue.put((t + expovariate(1/4), node_id))
             
             
