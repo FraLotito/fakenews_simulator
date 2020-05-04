@@ -2,6 +2,7 @@ from .network import Network, Node
 import math
 from queue import PriorityQueue
 from random import expovariate, shuffle, uniform
+import copy
 
 
 class Simulator:
@@ -11,6 +12,7 @@ class Simulator:
         self.network = Network(N_common, N_influencers, N_interests, random_const, random_phy_const)
         self.events_queue = PriorityQueue()
 
+        """
         print("Computing initial avg..")
         s = 0
         for i in range(self.N):
@@ -25,6 +27,7 @@ class Simulator:
             s += self.network.nodes[i].score
             #print(self.network.nodes[i].score)
         print("AVG: {}".format(s / self.N))
+        """
 
     def first_population_queue(self, worst_node):
         idx_0 = worst_node
@@ -51,15 +54,25 @@ class Simulator:
 
         return worst_id, worst
 
-
-    def simulate(self):
+    def simulate(self, max_time):
         worst_node, _ = self.find_worst_node()
         self.first_population_queue(worst_node)
+
+        hist_status = []
+        # Add simulation checkpoint
+        for i in range(0, max_time, 50):
+            self.events_queue.put((i, -1))
+
         time = 0
         print("WORST NODE: ID {}, DEG: {}".format(worst_node, len(self.network.nodes[worst_node].adj)))
-        while time < 5000:
+        while time < max_time:
             t, node_id = self.events_queue.get()
             time = t
+
+            if node_id == -1:  # checkpoint
+                hist_status.append(copy.deepcopy(self.network))
+                continue
+
             status = self.network.nodes[node_id].update() or worst_node == node_id
             #print("VISITED NODE: {}, {}".format(node_id, status)) 
             if status:
@@ -74,8 +87,8 @@ class Simulator:
                         weight = edge.weight
                         self.propagate(dest, score, weight)
             self.events_queue.put((time + expovariate(1/3), node_id))
-            
-            
+
+        return hist_status
 
     def propagate(self, dest, score, weight):
         if score > 0:
@@ -88,4 +101,3 @@ class Simulator:
         elif message > 1:
             message = 1
         self.network.nodes[dest].message_queue.append(message)
-
