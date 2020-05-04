@@ -6,29 +6,12 @@ import copy
 
 
 class Simulator:
-    def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const):
+    def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const, engagement_news):
         self.N = N_common + N_influencers
-        self.engagement_news = 1
+        self.engagement_news = engagement_news
         self.network = Network(N_common, N_influencers, N_interests, random_const, random_phy_const)
         self.sim_network = None
         self.events_queue = PriorityQueue()
-
-        """
-        print("Computing initial avg..")
-        s = 0
-        for i in range(self.N):
-            s += self.network.nodes[i].score
-        print("AVG: {}".format(s / self.N))
-
-        self.simulate()
-
-        print("Computing ending avg..")
-        s = 0
-        for i in range(self.N):
-            s += self.network.nodes[i].score
-            #print(self.network.nodes[i].score)
-        print("AVG: {}".format(s / self.N))
-        """
 
     def first_population_queue(self, worst_node):
         idx_0 = worst_node
@@ -70,15 +53,12 @@ class Simulator:
             time = t
 
             if node_id == -1:  # checkpoint
-                hist_status.append(copy.deepcopy(self.sim_network))
+                hist_status.append((time, copy.deepcopy(self.sim_network)))
                 continue
 
             status = self.sim_network.nodes[node_id].update() or worst_node == node_id
-            #print("VISITED NODE: {}, {}".format(node_id, status)) 
             if status:
                 score = self.sim_network.nodes[node_id].score
-                #print("SCORE: {}".format(score))
-                #print("EDGES: {}".format(self.network.nodes[node_id].adj))
                 for edge in self.sim_network.nodes[node_id].adj:
                     threshold = abs(score)
                     p = uniform(0, 1)

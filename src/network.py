@@ -173,9 +173,24 @@ class Network:
                 phys_dist = self.nodes[idx].compute_physical_distance(self.nodes[b])
                 add_proximity_edge(idx, b, phys_dist, random_phy_const)
             n += 1
-        
+
+    def average_score(self):
+        tot = 0
+        for n in self.nodes:
+            tot += self.nodes[n].score
+        return tot / len(self.nodes)
+
+    def average_weight(self):
+        tot = 0
+        for n in self.nodes:
+            weights = list(map(lambda edge: edge.weight, self.nodes[n].adj))
+            if len(weights) == 0:
+                tot += 0
+            else:
+                tot += sum(weights) / len(weights)
+        return tot / len(self.nodes)
+
     def plot(self):
-        #clusters = self.g.community_multilevel()
         new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(5)]
 
         vcolors = {key: new_cmap[int(self.nodes[key].type)] for key in self.nodes.keys()}
@@ -194,17 +209,14 @@ class Network:
             score.append(self.nodes[i].score)
         print("AVG DEG: {}".format(sum(deg) / len(deg)))
 
-        #plt.hist(deg)
-        #plt.show()
-        #plot(self.g, layout=Layout(layout))
         cont = 0
         for i in score:
             if i > 0.8:
                 print(i)
             elif i < -0.8:
                 print(i)
-            elif i < 0.5 and i > -0.5:
-                cont+=1
+            elif 0.5 > i > -0.5:
+                cont += 1
         print(cont)
 
 
