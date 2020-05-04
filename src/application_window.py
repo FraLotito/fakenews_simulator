@@ -65,6 +65,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         btn_layout.addWidget(self.create_node_legend())
 
         self.simulator = None
+        self.sim_results = None
 
     def create_network(self):
         self.n_common = int(self.n_common_ui.text())
@@ -264,6 +265,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.network_canvas.draw()
 
     def run_simulation(self):
+        if self.simulator is None:
+            QtWidgets.QMessageBox.about(self, "Error", "No network created!")
+            return
+
         self.sim_time = int(self.sim_time_ui.text())
         self.sim_results = self.simulator.simulate(self.sim_time)
         self.progress_bar.setValue(0)
@@ -274,6 +279,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.show_results_window()
 
     def show_results_window(self):
+        if self.sim_results is None:
+            QtWidgets.QMessageBox.about(self, "Error", "No simulations ended!")
+            return
+
         res = ResultsWindow(self.sim_results, self)
         res.show()
 
