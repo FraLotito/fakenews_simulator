@@ -203,6 +203,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 G.add_edge(a, b.dest)
                 edge_labels.append(b)
 
+        plt.figure(self.figure.number)
         nx.draw(G, pos=pos, with_labels=True, font_size=8, node_size=150, node_color=color_map, edge_color="grey")
 
         edges_artists = self.figure.get_axes()[0].patches
@@ -246,6 +247,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 G.add_edge(a, b.dest)
                 edge_labels.append(b)
 
+        plt.figure(self.figure.number)
         nx.draw(G, pos=pos, with_labels=True, font_size=8, node_size=150, node_color=color_map, edge_color="grey")
 
         edges_artists = self.figure.get_axes()[0].patches
