@@ -19,9 +19,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self._main)
         layout = QtWidgets.QVBoxLayout(self._main)
 
-        # Add parameters grid
+        # Add parameters grids
         self.init_parameters()
-        layout.addWidget(self.create_parameters_grid())
+        layout.addWidget(self.create_net_parameters_grid())
+        layout.addWidget(self.create_sim_parameters_grid())
 
         # Main layout: plot and buttons
         main_layout = QtWidgets.QHBoxLayout(self._main)
@@ -58,8 +59,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_interests = 5
         self.sim_time = 1000
 
-    def create_parameters_grid(self):
-        param_groupbox = QtWidgets.QGroupBox("Simulation parameters:")
+    def create_net_parameters_grid(self):
+        param_groupbox = QtWidgets.QGroupBox("Network parameters:")
 
         par_layout = QtWidgets.QGridLayout()
 
@@ -84,12 +85,20 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_interests_ui.setText(str(self.n_interests))
         par_layout.addWidget(self.n_interests_ui, 0, 5)
 
-        par_layout.addWidget(QLabel('Simulation time:'), 1, 0)
+        param_groupbox.setLayout(par_layout)
+        return param_groupbox
+
+    def create_sim_parameters_grid(self):
+        param_groupbox = QtWidgets.QGroupBox("Simulation parameters:")
+
+        par_layout = QtWidgets.QGridLayout()
+
+        par_layout.addWidget(QLabel('Simulation time:'), 0, 0)
         self.sim_time_ui = QLineEdit()
         self.sim_time_ui.setValidator(QtGui.QIntValidator())
         self.sim_time_ui.setAlignment(QtCore.Qt.AlignRight)
         self.sim_time_ui.setText(str(self.sim_time))
-        par_layout.addWidget(self.sim_time_ui, 1, 1)
+        par_layout.addWidget(self.sim_time_ui, 0, 1)
 
         param_groupbox.setLayout(par_layout)
         return param_groupbox

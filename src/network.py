@@ -154,13 +154,10 @@ class Network:
                 weight = prox
                 if len(edge) == 0:
                     self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, prox))
-                    #self.nodes[idx_b].add_adj(Edge(idx_a, prox))
                     self.g.add_edges([(idx_a, idx_b)])
                 else:
                     weight = np.mean([weight, edge[0].weight])
-                    edge_b = list(filter(lambda x: x.dest == idx_a, self.nodes[idx_b].adj))
                     edge[0].weight = weight
-                    #edge_b[0].weight = weight
                 self.g[idx_a, idx_b] = weight
 
         n = 0
