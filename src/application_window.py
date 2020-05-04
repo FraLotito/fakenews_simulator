@@ -56,6 +56,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         run_btn.clicked.connect(self.run_simulation)
         btn_layout.addWidget(run_btn)
         self.progress_bar = QtWidgets.QProgressBar()
+        self.progress_bar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         btn_layout.addWidget(self.progress_bar)
         results_btn = QtWidgets.QPushButton("Show results")
         results_btn.clicked.connect(self.show_results_window)
