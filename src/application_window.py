@@ -68,15 +68,24 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.simulator = None
         self.sim_results = None
 
-    def create_network(self):
+    def create_network(self, skip_draw=False):
         self.n_common = int(self.n_common_ui.text())
         self.n_influencer = int(self.n_influencer_ui.text())
         self.n_interests = int(self.n_interests_ui.text())
         self.engagement_news = float(self.engagement_news_ui.text())
+        self.score_avg = float(self.score_avg_ui.text())
+        self.score_var = float(self.score_var_ui.text())
+        self.interests_avg = float(self.interests_avg_ui.text())
+        self.interests_var = float(self.interests_var_ui.text())
+        self.random_const = float(self.random_const_ui.text())
+        self.random_phy_const = float(self.random_phy_const_ui.text())
         self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=self.n_interests,
-                                   random_const=0.1, random_phy_const=0.1, engagement_news=self.engagement_news)
+                                   random_const=self.random_const, random_phy_const=self.random_phy_const,
+                                   engagement_news=self.engagement_news, score_avg=self.score_avg,
+                                   score_var=self.score_var, int_avg=self.interests_avg, int_var=self.interests_var)
 
-        self.draw_network()
+        if not skip_draw:
+            self.draw_network()
 
     def save_network(self):
         options = QFileDialog.Options()
@@ -94,8 +103,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         filename, _ = QFileDialog.getOpenFileName(self, "Load a network", "",
                                                   "Pickle Files (*.pickle);;All Files (*)", options=options)
         if filename:
-            self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=self.n_interests,
-                                       random_const=0.1, random_phy_const=0.1, engagement_news=self.engagement_news)
+            self.create_network(True)
 
             with open(filename, 'rb') as handle:
                 self.simulator.network = pickle.load(handle)
@@ -104,9 +112,22 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.n_common = self.simulator.network.N_common
             self.n_influencer = self.simulator.network.N_influencers
             self.n_interests = self.simulator.network.N_interests
+            self.score_avg = self.simulator.network.score_avg
+            self.score_var = self.simulator.network.score_var
+            self.interests_avg = self.simulator.network.interests_avg
+            self.interests_var = self.simulator.network.interests_var
+            self.random_const = self.simulator.network.random_const
+            self.random_phy_const = self.simulator.network.random_phy_const
+
             self.n_common_ui.setText(self.n_common)
             self.n_influencer_ui.setText(self.n_influencer)
             self.n_interests_ui.setText(self.n_interests)
+            self.score_avg_ui.setText(self.score_avg)
+            self.score_var_ui.setText(self.score_var)
+            self.interests_avg_ui.setText(self.interests_avg)
+            self.interests_var_ui.setText(self.interests_var)
+            self.random_const_ui.setText(self.random_const)
+            self.random_phy_const_ui.setText(self.random_phy_const)
 
             QtWidgets.QMessageBox.about(self, "Info", "Network loaded!")
 
@@ -116,6 +137,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_interests = 5
         self.sim_time = 1000
         self.engagement_news = 1.0
+        self.score_avg = 0
+        self.score_var = 0.4
+        self.interests_avg = 0
+        self.interests_var = 0.4
+        self.random_const = 0.1
+        self.random_phy_const = 0.1
 
     def create_net_parameters_grid(self):
         param_groupbox = QtWidgets.QGroupBox("Network parameters:")
@@ -127,6 +154,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_common_ui.setValidator(QtGui.QIntValidator())
         self.n_common_ui.setAlignment(QtCore.Qt.AlignRight)
         self.n_common_ui.setText(str(self.n_common))
+        self.n_common_ui.setToolTip("test")
         par_layout.addWidget(self.n_common_ui, 0, 1)
 
         par_layout.addWidget(QLabel('Number of influencers:'), 0, 2)
@@ -142,6 +170,48 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_interests_ui.setAlignment(QtCore.Qt.AlignRight)
         self.n_interests_ui.setText(str(self.n_interests))
         par_layout.addWidget(self.n_interests_ui, 0, 5)
+
+        par_layout.addWidget(QLabel('Score normal distribution mean:'), 1, 0)
+        self.score_avg_ui = QLineEdit()
+        self.score_avg_ui.setValidator(QtGui.QDoubleValidator())
+        self.score_avg_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.score_avg_ui.setText(str(self.score_avg))
+        par_layout.addWidget(self.score_avg_ui, 1, 1)
+
+        par_layout.addWidget(QLabel('Score normal distribution std:'), 1, 2)
+        self.score_var_ui = QLineEdit()
+        self.score_var_ui.setValidator(QtGui.QDoubleValidator())
+        self.score_var_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.score_var_ui.setText(str(self.score_var))
+        par_layout.addWidget(self.score_var_ui, 1, 3)
+
+        par_layout.addWidget(QLabel('Interests normal distribution mean:'), 1, 4)
+        self.interests_avg_ui = QLineEdit()
+        self.interests_avg_ui.setValidator(QtGui.QDoubleValidator())
+        self.interests_avg_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.interests_avg_ui.setText(str(self.interests_avg))
+        par_layout.addWidget(self.interests_avg_ui, 1, 5)
+
+        par_layout.addWidget(QLabel('Interests normal distribution std:'), 2, 0)
+        self.interests_var_ui = QLineEdit()
+        self.interests_var_ui.setValidator(QtGui.QDoubleValidator())
+        self.interests_var_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.interests_var_ui.setText(str(self.interests_var))
+        par_layout.addWidget(self.interests_var_ui, 2, 1)
+
+        par_layout.addWidget(QLabel('Random bound for interests edges:'), 2, 2)
+        self.random_const_ui = QLineEdit()
+        self.random_const_ui.setValidator(QtGui.QDoubleValidator())
+        self.random_const_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.random_const_ui.setText(str(self.random_const))
+        par_layout.addWidget(self.random_const_ui, 2, 3)
+
+        par_layout.addWidget(QLabel('Random bound for geographical edges:'), 2, 4)
+        self.random_phy_const_ui = QLineEdit()
+        self.random_phy_const_ui.setValidator(QtGui.QDoubleValidator())
+        self.random_phy_const_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.random_phy_const_ui.setText(str(self.random_phy_const))
+        par_layout.addWidget(self.random_phy_const_ui, 2, 5)
 
         param_groupbox.setLayout(par_layout)
         return param_groupbox
