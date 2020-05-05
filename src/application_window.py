@@ -55,10 +55,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         run_btn = QtWidgets.QPushButton("Run one simulation")
         run_btn.clicked.connect(self.run_simulation)
         btn_layout.addWidget(run_btn)
+        run_n_btn = QtWidgets.QPushButton("Run N simulations")
+        run_n_btn.clicked.connect(self.run_n_simulations)
+        btn_layout.addWidget(run_n_btn)
         self.progress_bar = QtWidgets.QProgressBar()
         self.progress_bar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         btn_layout.addWidget(self.progress_bar)
-        results_btn = QtWidgets.QPushButton("Show results")
+        results_btn = QtWidgets.QPushButton("Show simulation results")
         results_btn.clicked.connect(self.show_results_window)
         btn_layout.addWidget(results_btn)
 
@@ -67,6 +70,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.simulator = None
         self.sim_results = None
+        self.n_sim_results = None
 
     def create_network(self, skip_draw=False):
         self.n_common = int(self.n_common_ui.text())
@@ -362,7 +366,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.about(self, "Error", "No network created!")
             return
 
+        self.n_sim_results = None
         self.sim_time = int(self.sim_time_ui.text())
+        self.engagement_news = float(self.engagement_news_ui.text())
+        self.simulator.engagement_news = self.engagement_news
         self.sim_results = self.simulator.simulate(self.sim_time)
         self.progress_bar.setValue(0)
         for i, net in enumerate(self.sim_results):
@@ -371,12 +378,32 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.show_results_window()
 
+    def run_n_simulations(self):
+        if self.simulator is None:
+            QtWidgets.QMessageBox.about(self, "Error", "No network created!")
+            return
+
+        n_sim, ok_pressed = QInputDialog.getInt(self, "Run N simulations", "Number of simulations:", 100, 0, 100, 1)
+        if ok_pressed:
+            self.sim_results = None
+            self.sim_time = int(self.sim_time_ui.text())
+            self.engagement_news = float(self.engagement_news_ui.text())
+            self.simulator.engagement_news = self.engagement_news
+
+            self.progress_bar.setValue(0)
+            self.n_sim_results = []
+            for i in range(n_sim):
+                self.n_sim_results.append(self.simulator.simulate(self.sim_time))
+                self.progress_bar.setValue(int((i + 1) / n_sim * 100))
+
+            self.show_results_window()
+
     def show_results_window(self):
-        if self.sim_results is None:
+        if self.sim_results is None and self.n_sim_results is None:
             QtWidgets.QMessageBox.about(self, "Error", "No simulations ended!")
             return
 
-        res = ResultsWindow(self.sim_results, self)
+        res = ResultsWindow(self.sim_results, self.n_sim_results, self)
         res.show()
 
 

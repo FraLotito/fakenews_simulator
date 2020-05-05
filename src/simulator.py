@@ -50,7 +50,6 @@ class Simulator:
             self.events_queue.put((i, -1))
 
         time = 0
-        print("WORST NODE: ID {}, DEG: {}".format(worst_node, len(self.sim_network.nodes[worst_node].adj)))
         while time < max_time:
             t, node_id = self.events_queue.get()
             time = t
