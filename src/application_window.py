@@ -91,7 +91,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         # TODO: add ui element
         self.weighted = False
-        
+
         self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=self.n_interests,
                                    random_const=self.random_const, random_phy_const=self.random_phy_const,
                                    engagement_news=self.engagement_news, score_avg=self.score_avg,
@@ -380,7 +380,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.sim_time = int(self.sim_time_ui.text())
         self.engagement_news = float(self.engagement_news_ui.text())
         self.simulator.engagement_news = self.engagement_news
-        self.sim_results = self.simulator.simulate(self.sim_time)
+
+        #TODO: UI
+        SIR = True
+
+        self.sim_results = self.simulator.simulate(self.sim_time, SIR=SIR)
         self.progress_bar.setValue(0)
         for i, net in enumerate(self.sim_results):
             self.draw_simulation_network(net[1])

@@ -16,7 +16,7 @@ def norm_sample(avg=0, var=0.4, n=None):
     Sample from a normal distribution centered in 0.5. Results are limited in [0, 1]
     """
     norm_vals = np.random.normal(avg, var, n)  # sample from a normal distribution
-    return np.clip(norm_vals, -1, 1)  # limit the results into [0, 1]
+    return np.clip(norm_vals, 0, 1)  # limit the results into [0, 1]
 
 
 class NodeType(IntEnum):
@@ -42,6 +42,9 @@ class Node:
 
         #self.score = norm_sample(avg=score_avg, var=score_var)
         self.score = 0
+        #self.recover_rate = norm_sample(avg=score_avg, var=score_var)
+        self.recover_rate = 0
+        self.reshare_rate = norm_sample(avg=score_avg, var=score_var)
 
         self.interests = norm_sample(avg=int_avg, var=int_var, n=n_interests)
         np.append(self.interests, self.score)
@@ -49,6 +52,13 @@ class Node:
         self.position_x = np.random.uniform(0, 1)
         self.position_y = np.random.uniform(0, 1)
         self.message_queue = []
+
+    def is_recovered(self):
+        p = random.uniform(0,1)
+        if p < self.recover_rate:
+            return True
+        else:
+            return False
 
     def update(self):
         s = sum(self.message_queue)

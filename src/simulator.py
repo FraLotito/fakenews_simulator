@@ -16,33 +16,28 @@ class Simulator:
         self.sim_network = None
         self.events_queue = PriorityQueue()
 
-    def first_population_queue(self, worst_node):
-        idx_0 = worst_node
-        self.events_queue.put((0, idx_0))
+    def first_population_queue(self):
         t = 0
         order = []
         for i in range(self.N):
-            if idx_0 != i:
-                order.append(i)
+            order.append(i)
         shuffle(order)
-        for i in range(self.N - 1):
+        for i in range(self.N):
             t += expovariate(1/3)
             self.events_queue.put((t, order[i]))
 
-    def find_worst_node(self):
-        worst = -1
-        worst_id = -1
-        for i in self.sim_network.nodes.keys():
-            if self.sim_network.nodes[i].score > worst:
-                worst = self.sim_network.nodes[i].score
-                worst_id = i
+    def initial_infection(self, n_infects):
+        import random
+        infections = [random.randint(0, self.N-1) for i in range(n_infects)]
+        for infected in infections:
+            self.sim_network.nodes[infected].score = 1
+            self.sim_network.nodes[infected].reshare_rate = 1
+            self.sim_network.nodes[infected].recover_rate = 0
 
-        return worst_id, worst
-
-    def simulate(self, max_time):
+    def simulate(self, max_time, SIR=False):
         self.sim_network = copy.deepcopy(self.network)
-        worst_node, _ = self.find_worst_node()
-        self.first_population_queue(worst_node)
+        self.initial_infection(n_infects=1)
+        self.first_population_queue()
 
         hist_status = []
         # Add simulation checkpoint
@@ -57,29 +52,43 @@ class Simulator:
             if node_id == -1:  # checkpoint
                 hist_status.append((time, copy.deepcopy(self.sim_network)))
                 continue
-
-            status = self.sim_network.nodes[node_id].update() or worst_node == node_id
+            
+            if not SIR:
+                status = self.sim_network.nodes[node_id].update()
+            else:
+                if self.sim_network.nodes[node_id].score == 1:
+                    if self.sim_network.nodes[node_id].is_recovered():
+                        self.sim_network.nodes[node_id].score = -1
+                        status = False
+                    else:
+                        status = True
+                else:
+                    status = False
             if status:
+                reshare_rate = self.sim_network.nodes[node_id].reshare_rate
                 score = self.sim_network.nodes[node_id].score
                 for edge in self.sim_network.nodes[node_id].adj:
-                    threshold = abs(score)
                     p = uniform(0, 1)
-                    if p < threshold:
+                    if p < reshare_rate:
                         dest = edge.dest
                         weight = edge.weight
-                        self.propagate(dest, score, weight)
+                        self.propagate(dest, score, weight, SIR=SIR)
             self.events_queue.put((time + expovariate(1/3), node_id))
 
         return hist_status
 
-    def propagate(self, dest, score, weight):
-        if score > 0:
-            En = self.engagement_news
+    def propagate(self, dest, score, weight, SIR):
+        if SIR:
+            if self.sim_network.nodes[dest].score == 0:
+                self.sim_network.nodes[dest].score = 1
         else:
-            En = self.engagement_news * 0.5
-        message = En * score * weight
-        if message < - 1:
-            message = -1
-        elif message > 1:
-            message = 1
-        self.sim_network.nodes[dest].message_queue.append(message)
+            if score > 0:
+                En = self.engagement_news
+            else:
+                En = self.engagement_news * 0.5
+            message = En * score * weight
+            if message < - 1:
+                message = -1
+            elif message > 1:
+                message = 1
+            self.sim_network.nodes[dest].message_queue.append(message)
