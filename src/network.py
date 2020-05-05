@@ -87,9 +87,10 @@ class Node:
 
 class Network:
     def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const,
-                 score_avg, score_var, int_avg, int_var):
+                 score_avg, score_var, int_avg, int_var, weighted=True):
         self.N_common = N_common
         self.N_influencers = N_influencers
+        self.is_weighted = weighted
         self.nodes = {}
         self.available_id = 0
         self.N_interests = N_interests
@@ -100,6 +101,8 @@ class Network:
         self.g = Graph(directed=True)
         self.generate_common(random_const, random_phy_const)
         self.generate_influencers(random_const*2, random_phy_const*2)
+        
+        
 
     def gen_node(self, node_type):
         idx = self.available_id
@@ -119,10 +122,13 @@ class Network:
             prox = (1 - dist)
             edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
             if dist < random_const or len(edge) > 0:
-                weight = prox
+                if self.is_weighted:
+                    weight = prox
+                else:
+                    weight = 1
                 if len(edge) == 0:
-                    self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, prox))
-                    self.nodes[idx_b].add_adj(Edge(idx_b, idx_a, prox))
+                    self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, weight))
+                    self.nodes[idx_b].add_adj(Edge(idx_b, idx_a, weight))
                     self.g.add_edges([(idx_a, idx_b)])
                 else:
                     weight = np.min([weight, edge[0].weight])
@@ -157,9 +163,12 @@ class Network:
             prox = (1 - dist)
             if dist < random_const:
                 edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
-                weight = prox
+                if self.is_weighted:
+                    weight = prox
+                else:
+                    weight = 1
                 if len(edge) == 0:
-                    self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, prox))
+                    self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, weight))
                     self.g.add_edges([(idx_a, idx_b)])
                 else:
                     weight = np.mean([weight, edge[0].weight])

@@ -7,12 +7,12 @@ import copy
 
 class Simulator:
     def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const, engagement_news,
-                 score_avg, score_var, int_avg, int_var):
+                 score_avg, score_var, int_avg, int_var, weighted=True):
         self.N = N_common + N_influencers
         self.engagement_news = engagement_news
         self.network = Network(N_common=N_common, N_influencers=N_influencers, N_interests=N_interests,
                                random_const=random_const, random_phy_const=random_phy_const, score_avg=score_avg,
-                               score_var=score_var, int_avg=int_avg, int_var=int_var)
+                               score_var=score_var, int_avg=int_avg, int_var=int_var, weighted=weighted)
         self.sim_network = None
         self.events_queue = PriorityQueue()
 

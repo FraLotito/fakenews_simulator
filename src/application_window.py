@@ -88,10 +88,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.interests_var = float(self.interests_var_ui.text())
         self.random_const = float(self.random_const_ui.text())
         self.random_phy_const = float(self.random_phy_const_ui.text())
+
+        # TODO: add ui element
+        self.weighted = False
+        
         self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=self.n_interests,
                                    random_const=self.random_const, random_phy_const=self.random_phy_const,
                                    engagement_news=self.engagement_news, score_avg=self.score_avg,
-                                   score_var=self.score_var, int_avg=self.interests_avg, int_var=self.interests_var)
+                                   score_var=self.score_var, int_avg=self.interests_avg, 
+                                   int_var=self.interests_var, weighted=self.weighted)
 
         if not skip_draw:
             self.draw_network()
