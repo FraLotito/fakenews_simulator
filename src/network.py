@@ -40,8 +40,8 @@ class Node:
         self.type = node_type
         self.adj = []
 
-        self.score = norm_sample(avg=score_avg, var=score_var)
-        self.initial_score = self.score
+        #self.score = norm_sample(avg=score_avg, var=score_var)
+        self.score = 0
 
         self.interests = norm_sample(avg=int_avg, var=int_var, n=n_interests)
         np.append(self.interests, self.score)
