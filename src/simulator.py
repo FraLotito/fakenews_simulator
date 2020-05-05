@@ -16,28 +16,29 @@ class Simulator:
         self.sim_network = None
         self.events_queue = PriorityQueue()
 
-    def first_population_queue(self):
+    def first_population_queue(self, first_infect):
         t = 0
         order = []
         for i in range(self.N):
-            order.append(i)
+            if i != first_infect:
+                order.append(i)
         shuffle(order)
-        for i in range(self.N):
+        for i in range(self.N - 1):
             t += expovariate(1/3)
             self.events_queue.put((t, order[i]))
 
-    def initial_infection(self, n_infects):
+    def initial_infection(self):
         import random
-        infections = [random.randint(0, self.N-1) for i in range(n_infects)]
-        for infected in infections:
-            self.sim_network.nodes[infected].score = 1
-            self.sim_network.nodes[infected].reshare_rate = 1
-            self.sim_network.nodes[infected].recover_rate = 0
+        infect = random.randint(0, self.N-1)
+        self.sim_network.nodes[infect].score = 1
+        self.sim_network.nodes[infect].reshare_rate = 1
+        self.sim_network.nodes[infect].recover_rate = 0
+        return infect
 
     def simulate(self, max_time, SIR=False):
         self.sim_network = copy.deepcopy(self.network)
-        self.initial_infection(n_infects=1)
-        self.first_population_queue()
+        first_infect = self.initial_infection()
+        self.first_population_queue(first_infect)
 
         hist_status = []
         # Add simulation checkpoint
