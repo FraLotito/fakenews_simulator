@@ -154,7 +154,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_common_ui.setValidator(QtGui.QIntValidator())
         self.n_common_ui.setAlignment(QtCore.Qt.AlignRight)
         self.n_common_ui.setText(str(self.n_common))
-        self.n_common_ui.setToolTip("test")
+        self.n_common_ui.setToolTip("The number of common nodes in the network")
         par_layout.addWidget(self.n_common_ui, 0, 1)
 
         par_layout.addWidget(QLabel('Number of influencers:'), 0, 2)
@@ -162,6 +162,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_influencer_ui.setValidator(QtGui.QIntValidator())
         self.n_influencer_ui.setAlignment(QtCore.Qt.AlignRight)
         self.n_influencer_ui.setText(str(self.n_influencer))
+        self.n_influencer_ui.setToolTip("The number of influencer nodes in the network")
         par_layout.addWidget(self.n_influencer_ui, 0, 3)
 
         par_layout.addWidget(QLabel('Number of interests:'), 0, 4)
@@ -169,6 +170,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_interests_ui.setValidator(QtGui.QIntValidator())
         self.n_interests_ui.setAlignment(QtCore.Qt.AlignRight)
         self.n_interests_ui.setText(str(self.n_interests))
+        self.n_interests_ui.setToolTip("The number of interests that characterize every node")
         par_layout.addWidget(self.n_interests_ui, 0, 5)
 
         par_layout.addWidget(QLabel('Score normal distribution mean:'), 1, 0)
@@ -176,6 +178,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.score_avg_ui.setValidator(QtGui.QDoubleValidator())
         self.score_avg_ui.setAlignment(QtCore.Qt.AlignRight)
         self.score_avg_ui.setText(str(self.score_avg))
+        self.score_avg_ui.setToolTip("The mean of the normal distribution that defines the score of a node")
         par_layout.addWidget(self.score_avg_ui, 1, 1)
 
         par_layout.addWidget(QLabel('Score normal distribution std:'), 1, 2)
@@ -183,6 +186,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.score_var_ui.setValidator(QtGui.QDoubleValidator())
         self.score_var_ui.setAlignment(QtCore.Qt.AlignRight)
         self.score_var_ui.setText(str(self.score_var))
+        self.score_var_ui.setToolTip("The standard deviation of the normal distribution that defines the score of a node")
         par_layout.addWidget(self.score_var_ui, 1, 3)
 
         par_layout.addWidget(QLabel('Interests normal distribution mean:'), 1, 4)
@@ -190,6 +194,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.interests_avg_ui.setValidator(QtGui.QDoubleValidator())
         self.interests_avg_ui.setAlignment(QtCore.Qt.AlignRight)
         self.interests_avg_ui.setText(str(self.interests_avg))
+        self.interests_avg_ui.setToolTip("The mean of the normal distribution that defines the interests of a node")
         par_layout.addWidget(self.interests_avg_ui, 1, 5)
 
         par_layout.addWidget(QLabel('Interests normal distribution std:'), 2, 0)
@@ -197,20 +202,23 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.interests_var_ui.setValidator(QtGui.QDoubleValidator())
         self.interests_var_ui.setAlignment(QtCore.Qt.AlignRight)
         self.interests_var_ui.setText(str(self.interests_var))
+        self.interests_var_ui.setToolTip("The standard deviation of the normal distribution that defines the interests of a node")
         par_layout.addWidget(self.interests_var_ui, 2, 1)
 
-        par_layout.addWidget(QLabel('Random bound for interests edges:'), 2, 2)
+        par_layout.addWidget(QLabel('Bound for interests edges:'), 2, 2)
         self.random_const_ui = QLineEdit()
         self.random_const_ui.setValidator(QtGui.QDoubleValidator())
         self.random_const_ui.setAlignment(QtCore.Qt.AlignRight)
         self.random_const_ui.setText(str(self.random_const))
+        self.random_const_ui.setToolTip("The bound used to decide if two nodes are connected based on their interests")
         par_layout.addWidget(self.random_const_ui, 2, 3)
 
-        par_layout.addWidget(QLabel('Random bound for geographical edges:'), 2, 4)
+        par_layout.addWidget(QLabel('Bound for geographical edges:'), 2, 4)
         self.random_phy_const_ui = QLineEdit()
         self.random_phy_const_ui.setValidator(QtGui.QDoubleValidator())
         self.random_phy_const_ui.setAlignment(QtCore.Qt.AlignRight)
         self.random_phy_const_ui.setText(str(self.random_phy_const))
+        self.random_phy_const_ui.setToolTip("The bound used to decide if two nodes are connected based on their geographical position")
         par_layout.addWidget(self.random_phy_const_ui, 2, 5)
 
         param_groupbox.setLayout(par_layout)
@@ -226,13 +234,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.sim_time_ui.setValidator(QtGui.QIntValidator())
         self.sim_time_ui.setAlignment(QtCore.Qt.AlignRight)
         self.sim_time_ui.setText(str(self.sim_time))
+        self.sim_time_ui.setToolTip("The time the simulation will last")
         par_layout.addWidget(self.sim_time_ui, 0, 1)
 
-        par_layout.addWidget(QLabel('News engagement [0, 1]:'), 0, 2)
+        par_layout.addWidget(QLabel('Fake news engagement [0, 1]:'), 0, 2)
         self.engagement_news_ui = QLineEdit()
         self.engagement_news_ui.setValidator(QtGui.QDoubleValidator())
         self.engagement_news_ui.setAlignment(QtCore.Qt.AlignRight)
         self.engagement_news_ui.setText(str(self.engagement_news))
+        self.engagement_news_ui.setToolTip("How much the fake news is engaging. 1 is the maximum")
         par_layout.addWidget(self.engagement_news_ui, 0, 3)
 
         param_groupbox.setLayout(par_layout)
