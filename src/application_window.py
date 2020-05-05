@@ -79,26 +79,36 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.draw_network()
 
     def save_network(self):
-        with open('network.pickle', 'wb') as handle:
-            pickle.dump(self.simulator.network, handle)
-        QtWidgets.QMessageBox.about(self, "Info", "Network saved!")
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        filename, _ = QFileDialog.getSaveFileName(self, "Save the network", "",
+                                                  "Pickle Files (*.pickle);;All Files (*)", options=options)
+        if filename:
+            with open(filename, 'wb') as handle:
+                pickle.dump(self.simulator.network, handle)
+            QtWidgets.QMessageBox.about(self, "Info", "Network saved!")
 
     def load_network(self):
-        self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=self.n_interests,
-                                   random_const=0.1, random_phy_const=0.1, engagement_news=self.engagement_news)
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        filename, _ = QFileDialog.getOpenFileName(self, "Load a network", "",
+                                                  "Pickle Files (*.pickle);;All Files (*)", options=options)
+        if filename:
+            self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=self.n_interests,
+                                       random_const=0.1, random_phy_const=0.1, engagement_news=self.engagement_news)
 
-        with open('network.pickle', 'rb') as handle:
-            self.simulator.network = pickle.load(handle)
-        self.draw_network()
+            with open(filename, 'rb') as handle:
+                self.simulator.network = pickle.load(handle)
+            self.draw_network()
 
-        self.n_common = self.simulator.network.N_common
-        self.n_influencer = self.simulator.network.N_influencers
-        self.n_interests = self.simulator.network.N_interests
-        self.n_common_ui.setText(self.n_common)
-        self.n_influencer_ui.setText(self.n_influencer)
-        self.n_interests_ui.setText(self.n_interests)
+            self.n_common = self.simulator.network.N_common
+            self.n_influencer = self.simulator.network.N_influencers
+            self.n_interests = self.simulator.network.N_interests
+            self.n_common_ui.setText(self.n_common)
+            self.n_influencer_ui.setText(self.n_influencer)
+            self.n_interests_ui.setText(self.n_interests)
 
-        QtWidgets.QMessageBox.about(self, "Info", "Network loaded!")
+            QtWidgets.QMessageBox.about(self, "Info", "Network loaded!")
 
     def init_parameters(self):
         self.n_common = 100
