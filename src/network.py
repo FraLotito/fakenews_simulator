@@ -11,12 +11,12 @@ def euclidean_distance(a, b):
     return np.linalg.norm(a - b)
 
 
-def norm_sample(avg=0, var=0.4, n=None):
+def norm_sample(avg=0, var=0.4, clip1=-1, clip2=1, n=None):
     """
     Sample from a normal distribution centered in 0.5. Results are limited in [0, 1]
     """
     norm_vals = np.random.normal(avg, var, n)  # sample from a normal distribution
-    return np.clip(norm_vals, 0, 1)  # limit the results into [0, 1]
+    return np.clip(norm_vals, clip1, clip2)  # limit the results into [0, 1]
 
 
 class NodeType(IntEnum):
@@ -43,10 +43,11 @@ class Node:
         #self.score = norm_sample(avg=score_avg, var=score_var)
         self.score = 0
         #self.recover_rate = norm_sample(avg=score_avg, var=score_var)
+        self.vulnerability = norm_sample(avg=score_avg, var=score_var)
         self.recover_rate = 0
-        self.reshare_rate = norm_sample(avg=score_avg, var=score_var)
+        self.reshare_rate = norm_sample(avg=score_avg, var=score_var, clip1=0, clip2=1)
 
-        self.interests = norm_sample(avg=int_avg, var=int_var, n=n_interests)
+        self.interests = norm_sample(avg=int_avg, var=int_var, n=n_interests, clip1=-1, clip2=1)
         np.append(self.interests, self.score)
 
         self.position_x = np.random.uniform(0, 1)
@@ -111,7 +112,6 @@ class Network:
         self.g = Graph(directed=True)
         self.generate_common(random_const, random_phy_const)
         self.generate_influencers(random_const*2, random_phy_const*2)
-        
         
 
     def gen_node(self, node_type):

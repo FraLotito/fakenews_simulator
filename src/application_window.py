@@ -151,8 +151,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_interests = 5
         self.sim_time = 1000
         self.engagement_news = 1.0
-        self.score_avg = 0
-        self.score_var = 0.4
+        self.score_avg = 0.5
+        self.score_var = 0.2
         self.interests_avg = 0
         self.interests_var = 0.4
         self.random_const = 0.1

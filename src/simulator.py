@@ -81,7 +81,9 @@ class Simulator:
     def propagate(self, dest, score, weight, SIR):
         if SIR:
             if self.sim_network.nodes[dest].score == 0:
-                self.sim_network.nodes[dest].score = 1
+                p = uniform(0, 1)
+                if p < self.sim_network.nodes[dest].vulnerability:
+                    self.sim_network.nodes[dest].score = 1
         else:
             if score > 0:
                 En = self.engagement_news
