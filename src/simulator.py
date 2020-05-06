@@ -17,15 +17,14 @@ class Simulator:
         self.events_queue = PriorityQueue()
 
     def first_population_queue(self, first_infect):
-        t = 0
         order = []
+        self.events_queue.put((0, first_infect))
         for i in range(self.N):
             if i != first_infect:
                 order.append(i)
         shuffle(order)
         for i in range(self.N - 1):
-            t += expovariate(1/3)
-            self.events_queue.put((t, order[i]))
+            self.events_queue.put((expovariate(1/4), order[i]))
 
     def initial_infection(self):
         import random
@@ -48,6 +47,7 @@ class Simulator:
         time = 0
         while time < max_time:
             t, node_id = self.events_queue.get()
+            
             time = t
 
             if node_id == -1:  # checkpoint
@@ -74,7 +74,7 @@ class Simulator:
                         dest = edge.dest
                         weight = edge.weight
                         self.propagate(dest, score, weight, SIR=SIR)
-            self.events_queue.put((time + expovariate(1/3), node_id))
+            self.events_queue.put((time + expovariate(1/4), node_id))
 
         return hist_status
 
