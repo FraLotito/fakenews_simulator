@@ -129,6 +129,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.interests_var = self.simulator.network.interests_var
             self.random_const = self.simulator.network.random_const
             self.random_phy_const = self.simulator.network.random_phy_const
+            self.weighted = self.simulator.network.is_weighted
 
             self.n_common_ui.setText(self.n_common)
             self.n_influencer_ui.setText(self.n_influencer)
@@ -139,6 +140,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.interests_var_ui.setText(self.interests_var)
             self.random_const_ui.setText(self.random_const)
             self.random_phy_const_ui.setText(self.random_phy_const)
+            self.weighted_ui.setChecked(self.weighted)
 
             QtWidgets.QMessageBox.about(self, "Info", "Network loaded!")
 
@@ -155,10 +157,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.random_const = 0.1
         self.random_phy_const = 0.1
 
-        # TODO: UI
         self.SIR = True
-
-        # TODO: add ui element
         self.weighted = False
 
     def create_net_parameters_grid(self):
@@ -238,6 +237,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.random_phy_const_ui.setToolTip("The bound used to decide if two nodes are connected based on their geographical position")
         par_layout.addWidget(self.random_phy_const_ui, 2, 5)
 
+        par_layout.addWidget(QLabel('Weighted network:'), 3, 0)
+        self.weighted_ui = QCheckBox()
+        self.weighted_ui.setChecked(self.weighted)
+        self.weighted_ui.setToolTip("")
+        par_layout.addWidget(self.weighted_ui, 3, 1)
+
         param_groupbox.setLayout(par_layout)
         return param_groupbox
 
@@ -261,6 +266,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.engagement_news_ui.setText(str(self.engagement_news))
         self.engagement_news_ui.setToolTip("How much the fake news is engaging. 1 is the maximum")
         par_layout.addWidget(self.engagement_news_ui, 0, 3)
+
+        par_layout.addWidget(QLabel('SIR model:'), 0, 4)
+        self.sir_ui = QCheckBox()
+        self.sir_ui.setChecked(self.SIR)
+        self.sir_ui.setToolTip("")
+        par_layout.addWidget(self.sir_ui, 0, 5)
 
         param_groupbox.setLayout(par_layout)
         return param_groupbox
