@@ -106,19 +106,38 @@ class ResultsWindow(QtWidgets.QMainWindow):
         def mean(vals):
             return sum(vals) / len(vals)
 
-        lbl = QLabel('Average node score with {} simulations'.format(n))
-        lbl.setAlignment(QtCore.Qt.AlignCenter)
-        lbl.setFont(QtGui.QFont("Arial", 12, QtGui.QFont.Bold))
-        self.layout.addWidget(lbl, 0, 0)
-        score_figure = plt.figure()
-        score_canvas = FigureCanvas(score_figure)
-        self.layout.addWidget(score_canvas, 1, 0)
-        sim_periods = [[sim[i][1].average_score() for sim in n_sim_results] for i in range(len(simulation_time))]
-        scores = [mean(time) for time in sim_periods]
-        plt.plot(simulation_time, scores)
-        plt.ylim(-1, 1)
-        plt.xlabel("Simulation time")
-        plt.ylabel("Average node score")
+        if self.SIR:
+            lbl = QLabel('SIR plot with {} simulations'.format(n))
+            lbl.setAlignment(QtCore.Qt.AlignCenter)
+            lbl.setFont(QtGui.QFont("Arial", 12, QtGui.QFont.Bold))
+            self.layout.addWidget(lbl, 0, 0)
+            score_figure = plt.figure()
+            score_canvas = FigureCanvas(score_figure)
+            self.layout.addWidget(score_canvas, 1, 0)
+            infected = [[sim[i][1].count_score_equal(1) for sim in n_sim_results] for i in range(len(simulation_time))]
+            infected = [mean(score) for score in infected]
+            neutral = [[sim[i][1].count_score_equal(0) for sim in n_sim_results] for i in range(len(simulation_time))]
+            neutral = [mean(score) for score in neutral]
+            recovered = [[sim[i][1].count_score_equal(-1) for sim in n_sim_results] for i in range(len(simulation_time))]
+            recovered = [mean(score) for score in recovered]
+            plt.plot(simulation_time, infected, label="Infected")
+            plt.plot(simulation_time, neutral, label="Neutral")
+            plt.plot(simulation_time, recovered, label="Recovered")
+            plt.legend()
+        else:
+            lbl = QLabel('Average node score with {} simulations'.format(n))
+            lbl.setAlignment(QtCore.Qt.AlignCenter)
+            lbl.setFont(QtGui.QFont("Arial", 12, QtGui.QFont.Bold))
+            self.layout.addWidget(lbl, 0, 0)
+            score_figure = plt.figure()
+            score_canvas = FigureCanvas(score_figure)
+            self.layout.addWidget(score_canvas, 1, 0)
+            sim_periods = [[sim[i][1].average_score() for sim in n_sim_results] for i in range(len(simulation_time))]
+            scores = [mean(time) for time in sim_periods]
+            plt.plot(simulation_time, scores)
+            plt.ylim(-1, 1)
+            plt.xlabel("Simulation time")
+            plt.ylabel("Average node score")
 
         res_layout = QtWidgets.QGridLayout()
         self.layout.addLayout(res_layout, 1, 1)

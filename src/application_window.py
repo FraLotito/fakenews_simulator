@@ -89,9 +89,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.random_const = float(self.random_const_ui.text())
         self.random_phy_const = float(self.random_phy_const_ui.text())
 
-        # TODO: add ui element
-        self.weighted = False
-
         self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=self.n_interests,
                                    random_const=self.random_const, random_phy_const=self.random_phy_const,
                                    engagement_news=self.engagement_news, score_avg=self.score_avg,
@@ -157,6 +154,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.interests_var = 0.4
         self.random_const = 0.1
         self.random_phy_const = 0.1
+
+        # TODO: UI
+        self.SIR = True
+
+        # TODO: add ui element
+        self.weighted = False
 
     def create_net_parameters_grid(self):
         param_groupbox = QtWidgets.QGroupBox("Network parameters:")
@@ -381,9 +384,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.engagement_news = float(self.engagement_news_ui.text())
         self.simulator.engagement_news = self.engagement_news
 
-        #TODO: UI
-        self.SIR = True
-
         self.sim_results = self.simulator.simulate(self.sim_time, SIR=self.SIR)
         self.progress_bar.setValue(0)
         for i, net in enumerate(self.sim_results):
@@ -407,7 +407,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.progress_bar.setValue(0)
             self.n_sim_results = []
             for i in range(n_sim):
-                self.n_sim_results.append(self.simulator.simulate(self.sim_time))
+                self.n_sim_results.append(self.simulator.simulate(self.sim_time, SIR=self.SIR))
                 self.progress_bar.setValue(int((i + 1) / n_sim * 100))
 
             self.show_results_window()
