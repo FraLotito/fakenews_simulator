@@ -6,13 +6,15 @@ from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2
 
 
 class ResultsWindow(QtWidgets.QMainWindow):
-    def __init__(self, sim_results, n_sim_results, *args, **kwargs):
+    def __init__(self, sim_results, n_sim_results, SIR=False, *args, **kwargs):
         super(ResultsWindow, self).__init__(*args, **kwargs)
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.Window)
         self.setWindowTitle('Simulation results')
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
         self.layout = QtWidgets.QGridLayout(self._main)
+
+        self.SIR = SIR
 
         if sim_results is not None:  # single simulation
             self.plot_sim_results(sim_results)
@@ -22,18 +24,34 @@ class ResultsWindow(QtWidgets.QMainWindow):
     def plot_sim_results(self, sim_results):
         simulation_time = [net[0] for net in sim_results]
 
-        lbl = QLabel('Average node score')
-        lbl.setAlignment(QtCore.Qt.AlignCenter)
-        lbl.setFont(QtGui.QFont("Arial", 12, QtGui.QFont.Bold))
-        self.layout.addWidget(lbl, 0, 0)
-        score_figure = plt.figure()
-        score_canvas = FigureCanvas(score_figure)
-        self.layout.addWidget(score_canvas, 1, 0)
-        scores = [net[1].average_score() for net in sim_results]
-        plt.plot(simulation_time, scores)
-        plt.ylim(-1, 1)
-        plt.xlabel("Simulation time")
-        plt.ylabel("Average node score")
+        if self.SIR:
+            lbl = QLabel('SIR plot')
+            lbl.setAlignment(QtCore.Qt.AlignCenter)
+            lbl.setFont(QtGui.QFont("Arial", 12, QtGui.QFont.Bold))
+            self.layout.addWidget(lbl, 0, 0)
+            score_figure = plt.figure()
+            score_canvas = FigureCanvas(score_figure)
+            self.layout.addWidget(score_canvas, 1, 0)
+            infected = [net[1].count_score_equal(1) for net in sim_results]
+            neutral = [net[1].count_score_equal(0) for net in sim_results]
+            recovered = [net[1].count_score_equal(-1) for net in sim_results]
+            plt.plot(simulation_time, infected, label="Infected")
+            plt.plot(simulation_time, neutral, label="Neutral")
+            plt.plot(simulation_time, recovered, label="Recovered")
+            plt.legend()
+        else:
+            lbl = QLabel('Average node score')
+            lbl.setAlignment(QtCore.Qt.AlignCenter)
+            lbl.setFont(QtGui.QFont("Arial", 12, QtGui.QFont.Bold))
+            self.layout.addWidget(lbl, 0, 0)
+            score_figure = plt.figure()
+            score_canvas = FigureCanvas(score_figure)
+            self.layout.addWidget(score_canvas, 1, 0)
+            scores = [net[1].average_score() for net in sim_results]
+            plt.plot(simulation_time, scores)
+            plt.ylim(-1, 1)
+            plt.xlabel("Simulation time")
+            plt.ylabel("Average node score")
 
         res_layout = QtWidgets.QGridLayout()
         self.layout.addLayout(res_layout, 1, 1)

@@ -59,6 +59,7 @@ class Simulator:
             else:
                 if self.sim_network.nodes[node_id].score == 1:
                     if self.sim_network.nodes[node_id].is_recovered():
+                        print("recovered")
                         self.sim_network.nodes[node_id].score = -1
                         status = False
                     else:

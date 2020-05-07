@@ -382,9 +382,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.simulator.engagement_news = self.engagement_news
 
         #TODO: UI
-        SIR = True
+        self.SIR = True
 
-        self.sim_results = self.simulator.simulate(self.sim_time, SIR=SIR)
+        self.sim_results = self.simulator.simulate(self.sim_time, SIR=self.SIR)
         self.progress_bar.setValue(0)
         for i, net in enumerate(self.sim_results):
             self.draw_simulation_network(net[1])
@@ -417,7 +417,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.about(self, "Error", "No simulations ended!")
             return
 
-        res = ResultsWindow(self.sim_results, self.n_sim_results, self)
+        res = ResultsWindow(self.sim_results, self.n_sim_results, self.SIR, self)
         res.show()
 
 

@@ -44,7 +44,7 @@ class Node:
         self.score = 0
         #self.recover_rate = norm_sample(avg=score_avg, var=score_var)
         self.vulnerability = norm_sample(avg=score_avg, var=score_var)
-        self.recover_rate = 0
+        self.recover_rate = 0.1
         self.reshare_rate = norm_sample(avg=score_avg, var=score_var, clip1=0, clip2=1)
 
         self.interests = norm_sample(avg=int_avg, var=int_var, n=n_interests, clip1=-1, clip2=1)
@@ -55,7 +55,7 @@ class Node:
         self.message_queue = []
 
     def is_recovered(self):
-        p = random.uniform(0,1)
+        p = random.uniform(0, 1)
         if p < self.recover_rate:
             return True
         else:
@@ -112,7 +112,6 @@ class Network:
         self.g = Graph(directed=True)
         self.generate_common(random_const, random_phy_const)
         self.generate_influencers(random_const*2, random_phy_const*2)
-        
 
     def gen_node(self, node_type):
         idx = self.available_id
@@ -214,6 +213,9 @@ class Network:
             else:
                 tot += sum(weights) / len(weights)
         return tot / len(self.nodes)
+
+    def count_score_equal(self, value):
+        return len(list(filter(lambda n: self.nodes[n].score == value, self.nodes)))
 
     def plot(self):
         new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(5)]
