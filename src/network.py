@@ -42,9 +42,10 @@ class Node:
 
         #self.score = norm_sample(avg=score_avg, var=score_var)
         self.score = 0
-        #self.recover_rate = norm_sample(avg=score_avg, var=score_var)
+        # TODO: convert to parameter
+        self.recover_rate = norm_sample(avg=0.1, var=0.3, clip1=0, clip2=1)
+        #self.recover_rate = 0.05
         self.vulnerability = norm_sample(avg=score_avg, var=score_var)
-        self.recover_rate = 0.05
         self.reshare_rate = norm_sample(avg=score_avg, var=score_var, clip1=0, clip2=1)
 
         self.interests = norm_sample(avg=int_avg, var=int_var, n=n_interests, clip1=-1, clip2=1)
@@ -112,6 +113,9 @@ class Network:
         self.g = Graph(directed=True)
         self.generate_common(random_const, random_phy_const)
         self.generate_influencers(random_const*2, random_phy_const*2)
+
+        # First node that starts infection. Useful for statistics
+        self.infected_node = None
 
     def gen_node(self, node_type):
         idx = self.available_id

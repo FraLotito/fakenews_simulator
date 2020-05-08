@@ -408,7 +408,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.about(self, "Error", "No network created!")
             return
 
-        n_sim, ok_pressed = QInputDialog.getInt(self, "Run N simulations", "Number of simulations:", 100, 0, 100, 1)
+        n_sim, ok_pressed = QInputDialog.getInt(self, "Run N simulations", "Number of simulations per each node:", 10, 0, 100, 1)
         if ok_pressed:
             self.sim_results = None
             self.sim_time = int(self.sim_time_ui.text())
@@ -417,9 +417,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
             self.progress_bar.setValue(0)
             self.n_sim_results = []
-            for i in range(n_sim):
-                self.n_sim_results.append(self.simulator.simulate(self.sim_time, SIR=self.SIR))
-                self.progress_bar.setValue(int((i + 1) / n_sim * 100))
+            n_nodes = len(self.simulator.network.nodes)
+            for n in range(n_nodes):
+                for i in range(n_sim):
+                    self.n_sim_results.append(self.simulator.simulate(self.sim_time, SIR=self.SIR, first_infect=n))
+                self.progress_bar.setValue(int((n + 1) / n_nodes * 100))
 
             self.show_results_window()
 

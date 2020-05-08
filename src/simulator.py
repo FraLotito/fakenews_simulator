@@ -1,7 +1,7 @@
 from .network import Network, Node
 import math
 from queue import PriorityQueue
-from random import expovariate, shuffle, uniform
+from random import expovariate, shuffle, uniform, randint
 import copy
 
 
@@ -26,17 +26,18 @@ class Simulator:
         for i in range(self.N - 1):
             self.events_queue.put((expovariate(1/4), order[i]))
 
-    def initial_infection(self):
-        import random
-        infect = random.randint(0, self.N-1)
-        self.sim_network.nodes[infect].score = 1
-        self.sim_network.nodes[infect].reshare_rate = 1
-        self.sim_network.nodes[infect].recover_rate = 0
-        return infect
+    def initial_infection(self, first_infect):
+        if first_infect is None:
+            first_infect = randint(0, self.N-1)
+        self.sim_network.nodes[first_infect].score = 1
+        self.sim_network.nodes[first_infect].reshare_rate = 1
+        self.sim_network.nodes[first_infect].recover_rate = 0
+        return first_infect
 
-    def simulate(self, max_time, SIR=False):
+    def simulate(self, max_time, SIR=False, first_infect=None):
         self.sim_network = copy.deepcopy(self.network)
-        first_infect = self.initial_infection()
+        first_infect = self.initial_infection(first_infect)
+        self.sim_network.infected_node = first_infect
         self.first_population_queue(first_infect)
 
         hist_status = []

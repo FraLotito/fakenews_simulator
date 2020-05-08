@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.qt_compat import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+import networkx as nx
 
 
 class ResultsWindow(QtWidgets.QMainWindow):
@@ -185,3 +186,29 @@ class ResultsWindow(QtWidgets.QMainWindow):
         ]
         plt.hist(scores_end)
         plt.xlabel("Node scores")
+
+        score_per_node_figure = plt.figure()
+        score_per_node_canvas = FigureCanvas(score_per_node_figure)
+        self.layout.addWidget(score_per_node_canvas, 1, 2)
+
+        G = nx.DiGraph()
+
+        pos = {}
+        color_map = []
+        net = n_sim_results[0][0][1]
+        for n, node in net.nodes.items():
+            G.add_node(n)
+            pos[n] = [node.position_x, node.position_y]
+
+            node_sim = list(filter(lambda x: x[0][1].infected_node == n, n_sim_results))
+            mean_score = mean([sim[-1][1].average_score() for sim in node_sim])
+            color_map.append(-mean_score)
+
+        for a, node in net.nodes.items():
+            for b in node.adj:
+                G.add_edge(a, b.dest)
+
+        plt.figure(score_per_node_figure.number)
+        nx.draw(G, pos=pos, with_labels=True, font_size=8, node_size=150, edge_color="grey", node_color=color_map,
+                cmap=plt.cm.Reds)
+        score_per_node_canvas.draw_idle()
