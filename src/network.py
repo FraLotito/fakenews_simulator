@@ -82,18 +82,24 @@ class Node:
         number_of_messages = len(self.message_queue)
 
         if number_of_messages != 0 and self.score != -1:
+            can_fact_check = False
+
             for i in range(number_of_messages):
                 p = random.uniform(0, 1)
                 message_type = self.message_queue[i]
+
                 if message_type == -1:
                     k = 0.1
                 else:
                     k = 1
+                    can_fact_check = True
+
                 if p < self.vulnerability * k:
                     self.score = message_type
-                    if message_type == 1:
-                        self.is_recovered()
-                    break
+                    can_fact_check = False
+                    
+            if can_fact_check and self.score == 0:
+                self.is_recovered()
 
         self.message_queue = []
         
