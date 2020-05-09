@@ -49,6 +49,9 @@ class Node:
         self.reshare_rate = norm_sample(avg=score_avg, var=score_var, clip1=0, clip2=1)
 
         self.interests = norm_sample(avg=int_avg, var=int_var, n=n_interests, clip1=-1, clip2=1)
+        
+        np.append(self.interests, self.vulnerability)
+        np.append(self.interests, self.recover_rate)
         np.append(self.interests, self.score)
 
         self.position_x = np.random.uniform(0, 1)
@@ -80,6 +83,9 @@ class Node:
 
     def update_sir(self):
         number_of_messages = len(self.message_queue)
+
+        if self.type == NodeType.Media:
+            return
 
         if number_of_messages != 0 and self.score != -1:
             can_fact_check = False
@@ -137,9 +143,11 @@ class Network:
         self.score_var = score_var
         self.int_avg = int_avg
         self.int_var = int_var
-        self.g = Graph(directed=True)
         self.generate_common(random_const, random_phy_const)
-        self.generate_influencers(random_const*2, random_phy_const*2)
+        self.generate_influencers(random_const, random_phy_const)
+
+        self.generate_bots(3)
+
 
         # First node that starts infection. Useful for statistics
         self.infected_node = None
@@ -153,10 +161,6 @@ class Network:
         return idx
 
     def generate_common(self, random_const, random_phy_const):
-        self.g.add_vertices(self.N_common)
-        self.g.es["weight"] = 1.0
-
-        layout = []
 
         def add_proximity_edge(idx_a, idx_b, dist, random_const):
             prox = (1 - dist)
@@ -169,18 +173,15 @@ class Network:
                 if len(edge) == 0:
                     self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, weight))
                     self.nodes[idx_b].add_adj(Edge(idx_b, idx_a, weight))
-                    self.g.add_edges([(idx_a, idx_b)])
                 else:
                     weight = np.min([weight, edge[0].weight])
                     edge_b = list(filter(lambda x: x.dest == idx_a, self.nodes[idx_b].adj))
                     edge[0].weight = weight
                     edge_b[0].weight = weight
-                self.g[idx_a, idx_b] = weight
 
         n = 0
         while n < self.N_common:
             idx = self.gen_node(NodeType.Common)
-            layout.append((self.nodes[idx].position_x, self.nodes[idx].position_y))
 
             for b in self.nodes.keys():
                 if idx == b:
@@ -196,8 +197,10 @@ class Network:
                 dist = self.nodes[a].compute_distance(self.nodes[b])
                 add_proximity_edge(a, b, dist, random_const)
 
+
+    # TODO: fare attenzione alle random_const (ci sono costanti moltiplicative)
+
     def generate_influencers(self, random_const, random_phy_const):
-        self.g.add_vertices(self.N_influencers)
 
         def add_proximity_edge(idx_a, idx_b, dist, random_const):
             prox = (1 - dist)
@@ -209,11 +212,9 @@ class Network:
                     weight = 1
                 if len(edge) == 0:
                     self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, weight))
-                    self.g.add_edges([(idx_a, idx_b)])
                 else:
                     weight = np.mean([weight, edge[0].weight])
                     edge[0].weight = weight
-                self.g[idx_a, idx_b] = weight
 
         n = 0
         while n < self.N_influencers:
@@ -223,10 +224,66 @@ class Network:
                 if idx == b:
                     continue
                 dist = self.nodes[idx].compute_distance(self.nodes[b])
-                add_proximity_edge(idx, b, dist, random_const)
+                add_proximity_edge(idx, b, dist, random_const * 2)
 
                 phys_dist = self.nodes[idx].compute_physical_distance(self.nodes[b])
-                add_proximity_edge(idx, b, phys_dist, random_phy_const)
+                add_proximity_edge(idx, b, phys_dist, random_phy_const * 2)
+
+            for b in self.nodes.keys():
+                if idx == b:
+                    continue
+                dist = self.nodes[idx].compute_distance(self.nodes[b])
+                add_proximity_edge(b, idx, dist, random_const * 0.5)
+
+                phys_dist = self.nodes[idx].compute_physical_distance(self.nodes[b])
+                add_proximity_edge(b, idx, phys_dist, random_phy_const * 0.5)
+
+            """
+            print("OUT: {}".format(len(self.nodes[idx].adj)))
+            cont = 0
+            for i in self.nodes.keys():
+                for j in self.nodes[i].adj:
+                    if j.dest == idx:
+                        cont += 1
+
+            print("IN: {}".format(cont))
+            """
+
+            n += 1
+
+
+    def generate_bots(self, N_bots):
+        n = 0
+
+        while n < N_bots:
+            idx = self.gen_node(NodeType.Media)
+            self.nodes[idx].score = 1
+
+            for b in self.nodes.keys():
+                if self.nodes[b].type == NodeType.Media:
+                    continue
+                
+                p = random.uniform(0, 1)
+                if p < 0.1:
+                    if self.is_weighted:
+                        weight = 0.1
+                    else:
+                        weight = 1
+                    self.nodes[idx].add_adj(Edge(idx, b, weight))
+                    self.nodes[idx].add_adj(Edge(b, idx, weight))
+
+
+
+            print("OUT: {}".format(len(self.nodes[idx].adj)))
+            cont = 0
+            for i in self.nodes.keys():
+                for j in self.nodes[i].adj:
+                    if j.dest == idx:
+                        cont += 1
+
+            print("IN: {}".format(cont))
+            
+
             n += 1
 
     def average_score(self):
@@ -247,37 +304,3 @@ class Network:
 
     def count_score_equal(self, value):
         return len(list(filter(lambda n: self.nodes[n].score == value, self.nodes)))
-
-    def plot(self):
-        new_cmap = ['#' + ''.join([random.choice('0123456789abcdef') for x in range(6)]) for z in range(5)]
-
-        vcolors = {key: new_cmap[int(self.nodes[key].type)] for key in self.nodes.keys()}
-        self.g.vs["color"] = [vcolors[v] for v in self.g.vs.indices]
-
-        self.g.vs["label"] = [v for v in self.g.vs.indices]
-        self.g.es["label"] = np.around(self.g.es["weight"], decimals=1)
-
-        deg = []
-        layout = []
-        score = []
-        for i in range(self.N_common + self.N_influencers):
-            print(self.nodes[i])
-            layout.append((self.nodes[i].position_x, self.nodes[i].position_y))
-            deg.append(len(self.nodes[i].adj))
-            score.append(self.nodes[i].score)
-        print("AVG DEG: {}".format(sum(deg) / len(deg)))
-
-        cont = 0
-        for i in score:
-            if i > 0.8:
-                print(i)
-            elif i < -0.8:
-                print(i)
-            elif 0.5 > i > -0.5:
-                cont += 1
-        print(cont)
-
-
-if __name__ == "__main__":
-    a = Network(100, 5, 5, random_const=0.1, random_phy_const=0.1)
-    a.plot()

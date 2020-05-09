@@ -1,4 +1,4 @@
-from .network import Network, Node
+from .network import Network, Node, NodeType
 import math
 from queue import PriorityQueue
 from random import expovariate, shuffle, uniform, randint
@@ -8,7 +8,8 @@ import copy
 class Simulator:
     def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const, engagement_news,
                  score_avg, score_var, int_avg, int_var, weighted=True):
-        self.N = N_common + N_influencers
+        self.N_bots = 3
+        self.N = N_common + N_influencers + self.N_bots
         self.engagement_news = engagement_news
         self.network = Network(N_common=N_common, N_influencers=N_influencers, N_interests=N_interests,
                                random_const=random_const, random_phy_const=random_phy_const, score_avg=score_avg,
@@ -72,7 +73,14 @@ class Simulator:
                     weight = edge.weight
                     if p < reshare_rate and dest != first_infect:
                         self.propagate(dest, score, weight, SIR=SIR)
-            self.events_queue.put((time + expovariate(1/16), node_id))
+
+            # se un nodo è un bot, allora si collega più spesso
+            if self.sim_network.nodes[node_id].type == NodeType.Media:
+                self.events_queue.put((time + expovariate(1/4), node_id))
+            else:
+                self.events_queue.put((time + expovariate(1/16), node_id))
+
+            
 
         return hist_status
 
