@@ -24,7 +24,7 @@ class Simulator:
                 order.append(i)
         shuffle(order)
         for i in range(self.N - 1):
-            self.events_queue.put((expovariate(1/4), order[i]))
+            self.events_queue.put((expovariate(1/16), order[i]))
 
     def initial_infection(self, first_infect):
         if first_infect is None:
@@ -56,35 +56,29 @@ class Simulator:
                 continue
             
             if not SIR:
-                status = self.sim_network.nodes[node_id].update()
+                self.sim_network.nodes[node_id].update()
             else:
-                if self.sim_network.nodes[node_id].score == 1:
-                    if self.sim_network.nodes[node_id].is_recovered():
-                        self.sim_network.nodes[node_id].score = -1
-                        status = False
-                    else:
-                        status = True
-                else:
-                    status = False
-            if status:
+                self.sim_network.nodes[node_id].update_sir()
+
+            score = self.sim_network.nodes[node_id].score
+
+            # TODO: la presenza di score == -1 indica se i -1 fanno spreading
+            #if score == 1:
+            if score == 1 or score == -1:
                 reshare_rate = self.sim_network.nodes[node_id].reshare_rate
-                score = self.sim_network.nodes[node_id].score
                 for edge in self.sim_network.nodes[node_id].adj:
                     p = uniform(0, 1)
-                    if p < reshare_rate:
-                        dest = edge.dest
-                        weight = edge.weight
+                    dest = edge.dest
+                    weight = edge.weight
+                    if p < reshare_rate and dest != first_infect:
                         self.propagate(dest, score, weight, SIR=SIR)
-            self.events_queue.put((time + expovariate(1/4), node_id))
+            self.events_queue.put((time + expovariate(1/16), node_id))
 
         return hist_status
 
     def propagate(self, dest, score, weight, SIR):
         if SIR:
-            if self.sim_network.nodes[dest].score == 0:
-                p = uniform(0, 1)
-                if p < self.sim_network.nodes[dest].vulnerability:
-                    self.sim_network.nodes[dest].score = 1
+            self.sim_network.nodes[dest].message_queue.append(score)
         else:
             if score > 0:
                 En = self.engagement_news

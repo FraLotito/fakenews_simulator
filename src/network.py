@@ -43,7 +43,7 @@ class Node:
         #self.score = norm_sample(avg=score_avg, var=score_var)
         self.score = 0
         # TODO: convert to parameter
-        self.recover_rate = norm_sample(avg=0.1, var=0.3, clip1=0, clip2=1)
+        self.recover_rate = norm_sample(avg=0.2, var=0.2, clip1=0, clip2=1)
         #self.recover_rate = 0.05
         self.vulnerability = norm_sample(avg=score_avg, var=score_var)
         self.reshare_rate = norm_sample(avg=score_avg, var=score_var, clip1=0, clip2=1)
@@ -58,6 +58,7 @@ class Node:
     def is_recovered(self):
         p = random.uniform(0, 1)
         if p < self.recover_rate:
+            self.score = -1
             return True
         else:
             return False
@@ -76,6 +77,26 @@ class Node:
             return True
         else:
             return False
+
+    def update_sir(self):
+        number_of_messages = len(self.message_queue)
+
+        if number_of_messages != 0 and self.score != -1:
+            for i in range(number_of_messages):
+                p = random.uniform(0, 1)
+                message_type = self.message_queue[i]
+                if message_type == -1:
+                    k = 0.1
+                else:
+                    k = 1
+                if p < self.vulnerability * k:
+                    self.score = message_type
+                    if message_type == 1:
+                        self.is_recovered()
+                    break
+
+        self.message_queue = []
+        
 
     def add_adj(self, edge):
         self.adj.append(edge)

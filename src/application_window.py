@@ -148,14 +148,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_common = 100
         self.n_influencer = 5
         self.n_interests = 5
-        self.sim_time = 1000
+        self.sim_time = 500
         self.engagement_news = 1.0
         self.score_avg = 0.5
         self.score_var = 0.2
         self.interests_avg = 0
         self.interests_var = 0.4
         self.random_const = 0.1
-        self.random_phy_const = 0.1
+        self.random_phy_const = 0.15
 
         self.SIR = True
         self.weighted = False
