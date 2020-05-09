@@ -89,7 +89,7 @@ class Node:
                 message_type = self.message_queue[i]
 
                 if message_type == -1:
-                    k = 0.1
+                    k = 0.2
                 else:
                     k = 1
                     can_fact_check = True
