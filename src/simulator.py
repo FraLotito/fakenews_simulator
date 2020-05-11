@@ -8,8 +8,8 @@ import copy
 class Simulator:
     def __init__(self, N_common, N_influencers, N_bots, N_interests, random_const, random_phy_const, engagement_news,
                  int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var, weighted=True):
-        self.N_bots = 3
-        self.N = N_common + N_influencers + self.N_bots
+
+        self.N = N_common + N_influencers + N_bots
         self.engagement_news = engagement_news
         self.network = Network(N_common=N_common, N_influencers=N_influencers, N_bots=N_bots, N_interests=N_interests,
                                random_const=random_const, random_phy_const=random_phy_const, int_avg=int_avg, int_var=int_var,

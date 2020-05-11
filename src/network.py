@@ -265,7 +265,7 @@ class Network:
                         weight = 1
                     self.nodes[idx].add_adj(Edge(idx, b, weight))
                     self.nodes[idx].add_adj(Edge(b, idx, weight))
-
+            
             print("OUT: {}".format(len(self.nodes[idx].adj)))
             cont = 0
             for i in self.nodes.keys():
