@@ -11,10 +11,7 @@ def euclidean_distance(a, b):
     return np.linalg.norm(a - b)
 
 
-def norm_sample(avg=0, var=0.4, clip1=-1, clip2=1, n=None):
-    """
-    Sample from a normal distribution centered in 0.5. Results are limited in [0, 1]
-    """
+def norm_sample(avg=0.0, var=0.4, clip1=-1, clip2=1, n=None):
     norm_vals = np.random.normal(avg, var, n)  # sample from a normal distribution
     return np.clip(norm_vals, clip1, clip2)  # limit the results into [0, 1]
 
@@ -35,18 +32,16 @@ class Edge:
 
 
 class Node:
-    def __init__(self, _id, node_type: NodeType, n_interests, score_avg, score_var, int_avg, int_var):
+    def __init__(self, _id, node_type: NodeType, n_interests, int_avg, int_var, recover_avg, recover_var,
+                 vuln_avg, vuln_var, reshare_avg, reshare_var):
         self.id = _id
         self.type = node_type
         self.adj = []
 
-        #self.score = norm_sample(avg=score_avg, var=score_var)
         self.score = 0
-        # TODO: convert to parameter
-        self.recover_rate = norm_sample(avg=0.2, var=0.2, clip1=0, clip2=1)
-        #self.recover_rate = 0.05
-        self.vulnerability = norm_sample(avg=score_avg, var=score_var)
-        self.reshare_rate = norm_sample(avg=score_avg, var=score_var, clip1=0, clip2=1)
+        self.recover_rate = norm_sample(avg=recover_avg, var=recover_var, clip1=0, clip2=1)
+        self.vulnerability = norm_sample(avg=vuln_avg, var=vuln_var, clip1=-1, clip2=1)
+        self.reshare_rate = norm_sample(avg=reshare_avg, var=reshare_var, clip1=0, clip2=1)
 
         self.interests = norm_sample(avg=int_avg, var=int_var, n=n_interests, clip1=-1, clip2=1)
         
@@ -108,7 +103,6 @@ class Node:
                 self.is_recovered()
 
         self.message_queue = []
-        
 
     def add_adj(self, edge):
         self.adj.append(edge)
@@ -131,31 +125,33 @@ class Node:
 
 
 class Network:
-    def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const,
-                 score_avg, score_var, int_avg, int_var, weighted=True):
+    def __init__(self, N_common, N_influencers, N_bots, N_interests, random_const, random_phy_const,
+                 int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var,
+                 weighted=True):
         self.N_common = N_common
         self.N_influencers = N_influencers
         self.is_weighted = weighted
         self.nodes = {}
         self.available_id = 0
         self.N_interests = N_interests
-        self.score_avg = score_avg
-        self.score_var = score_var
-        self.int_avg = int_avg
-        self.int_var = int_var
+        self.recover_avg, self.recover_var = recover_avg, recover_var
+        self.vuln_avg, self.vuln_var = vuln_avg, vuln_var
+        self.reshare_avg, self.reshare_var = reshare_avg, reshare_var
+        self.int_avg, self.int_var = int_avg, int_var
+
         self.generate_common(random_const, random_phy_const)
         self.generate_influencers(random_const, random_phy_const)
 
-        self.generate_bots(3)
-
+        self.generate_bots(N_bots)
 
         # First node that starts infection. Useful for statistics
         self.infected_node = None
 
     def gen_node(self, node_type):
         idx = self.available_id
-        node = Node(idx, node_type, n_interests=self.N_interests, score_avg=self.score_avg, score_var=self.score_var,
-                    int_avg=self.int_avg, int_var=self.int_var)
+        node = Node(idx, node_type, n_interests=self.N_interests, int_avg=self.int_avg, int_var=self.int_var,
+                    recover_avg=self.recover_avg, recover_var=self.recover_var, vuln_avg=self.vuln_avg, vuln_var=self.vuln_var,
+                    reshare_avg=self.reshare_avg, reshare_var=self.reshare_var)
         self.available_id += 1
         self.nodes[node.id] = node
         return idx
@@ -196,7 +192,6 @@ class Network:
                     continue
                 dist = self.nodes[a].compute_distance(self.nodes[b])
                 add_proximity_edge(a, b, dist, random_const)
-
 
     # TODO: fare attenzione alle random_const (ci sono costanti moltiplicative)
 
@@ -251,7 +246,6 @@ class Network:
 
             n += 1
 
-
     def generate_bots(self, N_bots):
         n = 0
 
@@ -272,8 +266,6 @@ class Network:
                     self.nodes[idx].add_adj(Edge(idx, b, weight))
                     self.nodes[idx].add_adj(Edge(b, idx, weight))
 
-
-
             print("OUT: {}".format(len(self.nodes[idx].adj)))
             cont = 0
             for i in self.nodes.keys():
@@ -282,7 +274,6 @@ class Network:
                         cont += 1
 
             print("IN: {}".format(cont))
-            
 
             n += 1
 

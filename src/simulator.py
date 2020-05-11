@@ -6,14 +6,15 @@ import copy
 
 
 class Simulator:
-    def __init__(self, N_common, N_influencers, N_interests, random_const, random_phy_const, engagement_news,
-                 score_avg, score_var, int_avg, int_var, weighted=True):
+    def __init__(self, N_common, N_influencers, N_bots, N_interests, random_const, random_phy_const, engagement_news,
+                 int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var, weighted=True):
         self.N_bots = 3
         self.N = N_common + N_influencers + self.N_bots
         self.engagement_news = engagement_news
-        self.network = Network(N_common=N_common, N_influencers=N_influencers, N_interests=N_interests,
-                               random_const=random_const, random_phy_const=random_phy_const, score_avg=score_avg,
-                               score_var=score_var, int_avg=int_avg, int_var=int_var, weighted=weighted)
+        self.network = Network(N_common=N_common, N_influencers=N_influencers, N_bots=N_bots, N_interests=N_interests,
+                               random_const=random_const, random_phy_const=random_phy_const, int_avg=int_avg, int_var=int_var,
+                               recover_avg=recover_avg, recover_var=recover_var, vuln_avg=vuln_avg, vuln_var=vuln_var,
+                               reshare_avg=reshare_avg, reshare_var=reshare_var, weighted=weighted)
         self.sim_network = None
         self.events_queue = PriorityQueue()
 
@@ -35,7 +36,7 @@ class Simulator:
         self.sim_network.nodes[first_infect].recover_rate = 0
         return first_infect
 
-    def simulate(self, max_time, SIR=False, first_infect=None):
+    def simulate(self, max_time, recovered_debunking=False, SIR=False, first_infect=None):
         self.sim_network = copy.deepcopy(self.network)
         first_infect = self.initial_infection(first_infect)
         self.sim_network.infected_node = first_infect
@@ -63,9 +64,7 @@ class Simulator:
 
             score = self.sim_network.nodes[node_id].score
 
-            # TODO: la presenza di score == -1 indica se i -1 fanno spreading
-            #if score == 1:
-            if score == 1 or score == -1:
+            if score == 1 or (score == -1 and recovered_debunking):
                 reshare_rate = self.sim_network.nodes[node_id].reshare_rate
                 for edge in self.sim_network.nodes[node_id].adj:
                     p = uniform(0, 1)
@@ -79,8 +78,6 @@ class Simulator:
                 self.events_queue.put((time + expovariate(1/4), node_id))
             else:
                 self.events_queue.put((time + expovariate(1/16), node_id))
-
-            
 
         return hist_status
 

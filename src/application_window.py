@@ -22,6 +22,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         # Add parameters grids
         self.init_parameters()
+        layout.addWidget(self.create_actors_parameters_grid())
+        layout.addWidget(self.create_node_parameters_grid())
         layout.addWidget(self.create_net_parameters_grid())
         layout.addWidget(self.create_sim_parameters_grid())
 
@@ -81,19 +83,26 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_common = int(self.n_common_ui.text())
         self.n_influencer = int(self.n_influencer_ui.text())
         self.n_interests = int(self.n_interests_ui.text())
+        self.n_bots = int(self.n_bots_ui.text())
         self.engagement_news = float(self.engagement_news_ui.text())
-        self.score_avg = float(self.score_avg_ui.text())
-        self.score_var = float(self.score_var_ui.text())
         self.interests_avg = float(self.interests_avg_ui.text())
         self.interests_var = float(self.interests_var_ui.text())
+        self.recover_avg = float(self.recover_avg_ui.text())
+        self.recover_var = float(self.recover_var_ui.text())
+        self.vulnerability_avg = float(self.vuln_avg_ui.text())
+        self.vulnerability_var = float(self.vuln_var_ui.text())
+        self.reshare_avg = float(self.reshare_avg_ui.text())
+        self.reshare_var = float(self.reshare_var_ui.text())
         self.random_const = float(self.random_const_ui.text())
         self.random_phy_const = float(self.random_phy_const_ui.text())
 
         self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=self.n_interests,
+                                   N_bots=self.n_bots, engagement_news=self.engagement_news,
                                    random_const=self.random_const, random_phy_const=self.random_phy_const,
-                                   engagement_news=self.engagement_news, score_avg=self.score_avg,
-                                   score_var=self.score_var, int_avg=self.interests_avg, 
-                                   int_var=self.interests_var, weighted=self.weighted)
+                                   recover_avg=self.recover_avg, recover_var=self.recover_var,
+                                   vuln_avg=self.vulnerability_avg, vuln_var=self.vulnerability_var,
+                                   reshare_avg=self.reshare_avg, reshare_var=self.reshare_var,
+                                   int_avg=self.interests_avg, int_var=self.interests_var, weighted=self.weighted)
 
         if not skip_draw:
             self.draw_network()
@@ -123,8 +132,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.n_common = self.simulator.network.N_common
             self.n_influencer = self.simulator.network.N_influencers
             self.n_interests = self.simulator.network.N_interests
-            self.score_avg = self.simulator.network.score_avg
-            self.score_var = self.simulator.network.score_var
+            self.recover_avg = self.simulator.network.recover_avg
+            self.recover_var = self.simulator.network.recover_var
+            self.vulnerability_avg = self.simulator.network.vuln_avg
+            self.vulnerability_var = self.simulator.network.vuln_var
+            self.reshare_avg = self.simulator.network.reshare_avg
+            self.reshare_var = self.simulator.network.reshare_var
             self.interests_avg = self.simulator.network.interests_avg
             self.interests_var = self.simulator.network.interests_var
             self.random_const = self.simulator.network.random_const
@@ -134,8 +147,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.n_common_ui.setText(self.n_common)
             self.n_influencer_ui.setText(self.n_influencer)
             self.n_interests_ui.setText(self.n_interests)
-            self.score_avg_ui.setText(self.score_avg)
-            self.score_var_ui.setText(self.score_var)
+            self.recover_avg_ui.setText(self.recover_avg)
+            self.recover_var_ui.setText(self.recover_var)
+            self.vuln_avg_ui.setText(self.vulnerability_avg)
+            self.vuln_var_ui.setText(self.vulnerability_var)
+            self.reshare_avg_ui.setText(self.reshare_avg)
+            self.reshare_var_ui.setText(self.reshare_var)
             self.interests_avg_ui.setText(self.interests_avg)
             self.interests_var_ui.setText(self.interests_var)
             self.random_const_ui.setText(self.random_const)
@@ -147,11 +164,16 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def init_parameters(self):
         self.n_common = 200
         self.n_influencer = 3
+        self.n_bots = 3
         self.n_interests = 5
         self.sim_time = 750
         self.engagement_news = 1.0
-        self.score_avg = 0.5
-        self.score_var = 0.2
+        self.vulnerability_avg = 0.5
+        self.vulnerability_var = 0.2
+        self.reshare_avg = 0.5
+        self.reshare_var = 0.2
+        self.recover_avg = 0.2
+        self.recover_var = 0.2
         self.interests_avg = 0
         self.interests_var = 0.4
         self.random_const = 0.05
@@ -159,9 +181,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.SIR = True
         self.weighted = False
+        self.recovered_debunking = True
 
-    def create_net_parameters_grid(self):
-        param_groupbox = QtWidgets.QGroupBox("Network parameters:")
+    def create_actors_parameters_grid(self):
+        param_groupbox = QtWidgets.QGroupBox("Actors parameters:")
+        param_groupbox.setStyleSheet("QGroupBox { font-weight: bold; } ")
 
         par_layout = QtWidgets.QGridLayout()
 
@@ -181,73 +205,132 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_influencer_ui.setToolTip("The number of influencer nodes in the network")
         par_layout.addWidget(self.n_influencer_ui, 0, 3)
 
-        par_layout.addWidget(QLabel('Number of interests:'), 0, 4)
+        par_layout.addWidget(QLabel('Number of bots:'), 0, 4)
+        self.n_bots_ui = QLineEdit()
+        self.n_bots_ui.setValidator(QtGui.QIntValidator())
+        self.n_bots_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.n_bots_ui.setText(str(self.n_bots))
+        self.n_bots_ui.setToolTip("The number of bot nodes in the network")
+        par_layout.addWidget(self.n_bots_ui, 0, 5)
+
+        param_groupbox.setLayout(par_layout)
+        return param_groupbox
+
+    def create_node_parameters_grid(self):
+        param_groupbox = QtWidgets.QGroupBox("Node parameters:")
+        param_groupbox.setStyleSheet("QGroupBox { font-weight: bold; } ")
+
+        par_layout = QtWidgets.QGridLayout()
+
+        par_layout.addWidget(QLabel('Number of interests:'), 0, 0)
         self.n_interests_ui = QLineEdit()
         self.n_interests_ui.setValidator(QtGui.QIntValidator())
         self.n_interests_ui.setAlignment(QtCore.Qt.AlignRight)
         self.n_interests_ui.setText(str(self.n_interests))
         self.n_interests_ui.setToolTip("The number of interests that characterize every node")
-        par_layout.addWidget(self.n_interests_ui, 0, 5)
+        par_layout.addWidget(self.n_interests_ui, 0, 1)
 
-        par_layout.addWidget(QLabel('Score normal distribution mean:'), 1, 0)
-        self.score_avg_ui = QLineEdit()
-        self.score_avg_ui.setValidator(QtGui.QDoubleValidator())
-        self.score_avg_ui.setAlignment(QtCore.Qt.AlignRight)
-        self.score_avg_ui.setText(str(self.score_avg))
-        self.score_avg_ui.setToolTip("The mean of the normal distribution that defines the score of a node")
-        par_layout.addWidget(self.score_avg_ui, 1, 1)
-
-        par_layout.addWidget(QLabel('Score normal distribution std:'), 1, 2)
-        self.score_var_ui = QLineEdit()
-        self.score_var_ui.setValidator(QtGui.QDoubleValidator())
-        self.score_var_ui.setAlignment(QtCore.Qt.AlignRight)
-        self.score_var_ui.setText(str(self.score_var))
-        self.score_var_ui.setToolTip("The standard deviation of the normal distribution that defines the score of a node")
-        par_layout.addWidget(self.score_var_ui, 1, 3)
-
-        par_layout.addWidget(QLabel('Interests normal distribution mean:'), 1, 4)
+        par_layout.addWidget(QLabel('Interests normal distribution mean:'), 0, 2)
         self.interests_avg_ui = QLineEdit()
         self.interests_avg_ui.setValidator(QtGui.QDoubleValidator())
         self.interests_avg_ui.setAlignment(QtCore.Qt.AlignRight)
         self.interests_avg_ui.setText(str(self.interests_avg))
         self.interests_avg_ui.setToolTip("The mean of the normal distribution that defines the interests of a node")
-        par_layout.addWidget(self.interests_avg_ui, 1, 5)
+        par_layout.addWidget(self.interests_avg_ui, 0, 3)
 
-        par_layout.addWidget(QLabel('Interests normal distribution std:'), 2, 0)
+        par_layout.addWidget(QLabel('Interests normal distribution std:'), 0, 4)
         self.interests_var_ui = QLineEdit()
         self.interests_var_ui.setValidator(QtGui.QDoubleValidator())
         self.interests_var_ui.setAlignment(QtCore.Qt.AlignRight)
         self.interests_var_ui.setText(str(self.interests_var))
         self.interests_var_ui.setToolTip("The standard deviation of the normal distribution that defines the interests of a node")
-        par_layout.addWidget(self.interests_var_ui, 2, 1)
+        par_layout.addWidget(self.interests_var_ui, 0, 5)
 
-        par_layout.addWidget(QLabel('Bound for interests edges:'), 2, 2)
+        par_layout.addWidget(QLabel('Reshare rate normal distribution mean:'), 1, 0)
+        self.reshare_avg_ui = QLineEdit()
+        self.reshare_avg_ui.setValidator(QtGui.QDoubleValidator())
+        self.reshare_avg_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.reshare_avg_ui.setText(str(self.reshare_avg))
+        self.reshare_avg_ui.setToolTip("The mean of the normal distribution that defines the reshare rate of a node")
+        par_layout.addWidget(self.reshare_avg_ui, 1, 1)
+
+        par_layout.addWidget(QLabel('Reshare rate normal distribution std:'), 1, 2)
+        self.reshare_var_ui = QLineEdit()
+        self.reshare_var_ui.setValidator(QtGui.QDoubleValidator())
+        self.reshare_var_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.reshare_var_ui.setText(str(self.reshare_var))
+        self.reshare_var_ui.setToolTip("The standard deviation of the normal distribution that defines the reshare rate of a node")
+        par_layout.addWidget(self.reshare_var_ui, 1, 3)
+
+        par_layout.addWidget(QLabel('Recover rate normal distribution mean:'), 1, 4)
+        self.recover_avg_ui = QLineEdit()
+        self.recover_avg_ui.setValidator(QtGui.QDoubleValidator())
+        self.recover_avg_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.recover_avg_ui.setText(str(self.recover_avg))
+        self.recover_avg_ui.setToolTip("The mean of the normal distribution that defines the recover rate of a node")
+        par_layout.addWidget(self.recover_avg_ui, 1, 5)
+
+        par_layout.addWidget(QLabel('Recover rate normal distribution std:'), 1, 6)
+        self.recover_var_ui = QLineEdit()
+        self.recover_var_ui.setValidator(QtGui.QDoubleValidator())
+        self.recover_var_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.recover_var_ui.setText(str(self.recover_var))
+        self.recover_var_ui.setToolTip("The standard deviation of the normal distribution that defines the recover rate of a node")
+        par_layout.addWidget(self.recover_var_ui, 1, 7)
+
+        par_layout.addWidget(QLabel('Vulnerability normal distribution mean:'), 2, 0)
+        self.vuln_avg_ui = QLineEdit()
+        self.vuln_avg_ui.setValidator(QtGui.QDoubleValidator())
+        self.vuln_avg_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.vuln_avg_ui.setText(str(self.vulnerability_avg))
+        self.vuln_avg_ui.setToolTip("The mean of the normal distribution that defines the vulnerability of a node")
+        par_layout.addWidget(self.vuln_avg_ui, 2, 1)
+
+        par_layout.addWidget(QLabel('Vulnerability rate normal distribution std:'), 2, 2)
+        self.vuln_var_ui = QLineEdit()
+        self.vuln_var_ui.setValidator(QtGui.QDoubleValidator())
+        self.vuln_var_ui.setAlignment(QtCore.Qt.AlignRight)
+        self.vuln_var_ui.setText(str(self.vulnerability_var))
+        self.vuln_var_ui.setToolTip("The standard deviation of the normal distribution that defines the vulnerability of a node")
+        par_layout.addWidget(self.vuln_var_ui, 2, 3)
+
+        param_groupbox.setLayout(par_layout)
+        return param_groupbox
+
+    def create_net_parameters_grid(self):
+        param_groupbox = QtWidgets.QGroupBox("Network parameters:")
+        param_groupbox.setStyleSheet("QGroupBox { font-weight: bold; } ")
+
+        par_layout = QtWidgets.QGridLayout()
+
+        par_layout.addWidget(QLabel('Bound for interests edges:'), 0, 0)
         self.random_const_ui = QLineEdit()
         self.random_const_ui.setValidator(QtGui.QDoubleValidator())
         self.random_const_ui.setAlignment(QtCore.Qt.AlignRight)
         self.random_const_ui.setText(str(self.random_const))
         self.random_const_ui.setToolTip("The bound used to decide if two nodes are connected based on their interests")
-        par_layout.addWidget(self.random_const_ui, 2, 3)
+        par_layout.addWidget(self.random_const_ui, 0, 1)
 
-        par_layout.addWidget(QLabel('Bound for geographical edges:'), 2, 4)
+        par_layout.addWidget(QLabel('Bound for geographical edges:'), 0, 2)
         self.random_phy_const_ui = QLineEdit()
         self.random_phy_const_ui.setValidator(QtGui.QDoubleValidator())
         self.random_phy_const_ui.setAlignment(QtCore.Qt.AlignRight)
         self.random_phy_const_ui.setText(str(self.random_phy_const))
         self.random_phy_const_ui.setToolTip("The bound used to decide if two nodes are connected based on their geographical position")
-        par_layout.addWidget(self.random_phy_const_ui, 2, 5)
+        par_layout.addWidget(self.random_phy_const_ui, 0, 3)
 
-        par_layout.addWidget(QLabel('Weighted network:'), 3, 0)
+        par_layout.addWidget(QLabel('Weighted network:'), 0, 4)
         self.weighted_ui = QCheckBox()
         self.weighted_ui.setChecked(self.weighted)
         self.weighted_ui.setToolTip("")
-        par_layout.addWidget(self.weighted_ui, 3, 1)
+        par_layout.addWidget(self.weighted_ui, 0, 5)
 
         param_groupbox.setLayout(par_layout)
         return param_groupbox
 
     def create_sim_parameters_grid(self):
         param_groupbox = QtWidgets.QGroupBox("Simulation parameters:")
+        param_groupbox.setStyleSheet("QGroupBox { font-weight: bold; } ")
 
         par_layout = QtWidgets.QGridLayout()
 
@@ -272,6 +355,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.sir_ui.setChecked(self.SIR)
         self.sir_ui.setToolTip("")
         par_layout.addWidget(self.sir_ui, 0, 5)
+
+        par_layout.addWidget(QLabel('Recovered nodes make debunking:'), 1, 0)
+        self.rec_deb_ui = QCheckBox()
+        self.rec_deb_ui.setChecked(self.recovered_debunking)
+        self.rec_deb_ui.setToolTip("")
+        par_layout.addWidget(self.rec_deb_ui, 1, 1)
 
         param_groupbox.setLayout(par_layout)
         return param_groupbox
@@ -393,9 +482,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.n_sim_results = None
         self.sim_time = int(self.sim_time_ui.text())
         self.engagement_news = float(self.engagement_news_ui.text())
+        self.recovered_debunking = self.rec_deb_ui.isChecked()
         self.simulator.engagement_news = self.engagement_news
 
-        self.sim_results = self.simulator.simulate(self.sim_time, SIR=self.SIR)
+        self.sim_results = self.simulator.simulate(self.sim_time, SIR=self.SIR, recovered_debunking=self.recovered_debunking)
         self.progress_bar.setValue(0)
         for i, net in enumerate(self.sim_results):
             self.draw_simulation_network(net[1])
@@ -413,6 +503,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.sim_results = None
             self.sim_time = int(self.sim_time_ui.text())
             self.engagement_news = float(self.engagement_news_ui.text())
+            self.recovered_debunking = self.rec_deb_ui.isChecked()
             self.simulator.engagement_news = self.engagement_news
 
             self.progress_bar.setValue(0)
@@ -420,7 +511,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             n_nodes = len(self.simulator.network.nodes)
             for n in range(n_nodes):
                 for i in range(n_sim):
-                    self.n_sim_results.append(self.simulator.simulate(self.sim_time, SIR=self.SIR, first_infect=n))
+                    self.n_sim_results.append(self.simulator.simulate(self.sim_time, SIR=self.SIR, first_infect=n,
+                                                                      recovered_debunking=self.recovered_debunking))
                 self.progress_bar.setValue(int((n + 1) / n_nodes * 100))
 
             self.show_results_window()
