@@ -300,7 +300,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         NodeType.Influencer: "lightgreen",
         NodeType.Conspirator: "tomato",
         NodeType.Debunker: "gold",
-        NodeType.Media: "plum"
+        NodeType.Bot: "plum"
     }
 
     def draw_network(self):

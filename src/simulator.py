@@ -75,7 +75,7 @@ class Simulator:
                         self.propagate(dest, score, weight, SIR=SIR)
 
             # se un nodo è un bot, allora si collega più spesso
-            if self.sim_network.nodes[node_id].type == NodeType.Media:
+            if self.sim_network.nodes[node_id].type == NodeType.Bot:
                 self.events_queue.put((time + expovariate(1/4), node_id))
             else:
                 self.events_queue.put((time + expovariate(1/16), node_id))

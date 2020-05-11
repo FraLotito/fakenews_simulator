@@ -24,7 +24,7 @@ class NodeType(IntEnum):
     Conspirator = 1,
     Influencer = 2,
     Debunker = 3,
-    Media = 4
+    Bot = 4
 
 
 class Edge:
@@ -84,7 +84,7 @@ class Node:
     def update_sir(self):
         number_of_messages = len(self.message_queue)
 
-        if self.type == NodeType.Media:
+        if self.type == NodeType.Bot:
             return
 
         if number_of_messages != 0 and self.score != -1:
@@ -256,11 +256,11 @@ class Network:
         n = 0
 
         while n < N_bots:
-            idx = self.gen_node(NodeType.Media)
+            idx = self.gen_node(NodeType.Bot)
             self.nodes[idx].score = 1
 
             for b in self.nodes.keys():
-                if self.nodes[b].type == NodeType.Media:
+                if self.nodes[b].type == NodeType.Bot:
                     continue
                 
                 p = random.uniform(0, 1)
