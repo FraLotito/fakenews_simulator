@@ -95,6 +95,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.reshare_var = float(self.reshare_var_ui.text())
         self.random_const = float(self.random_const_ui.text())
         self.random_phy_const = float(self.random_phy_const_ui.text())
+        self.weighted = self.weighted_ui.isChecked()
 
         self.simulator = Simulator(N_common=self.n_common, N_influencers=self.n_influencer, N_interests=self.n_interests,
                                    N_bots=self.n_bots, engagement_news=self.engagement_news,
