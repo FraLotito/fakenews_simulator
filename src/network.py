@@ -162,7 +162,8 @@ class Network:
         def add_proximity_edge(idx_a, idx_b, dist, random_const):
             prox = (1 - dist)
             edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
-            if dist < random_const or len(edge) > 0:
+            p = random.uniform(0, 1)
+            if (dist < random_const or len(edge) > 0) and p < 0.5:
                 if self.is_weighted:
                     weight = prox
                 else:
