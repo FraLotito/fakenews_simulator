@@ -3,18 +3,35 @@ import math
 from queue import PriorityQueue
 from random import expovariate, shuffle, uniform, randint
 import copy
-
+import pickle
 
 class Simulator:
     def __init__(self, N_common, N_influencers, N_bots, N_interests, random_const, random_phy_const, engagement_news,
                  int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var, weighted=True):
-
+        
+        self.N_common = N_common
         self.N = N_common + N_influencers + N_bots
         self.engagement_news = engagement_news
         self.network = Network(N_common=N_common, N_influencers=N_influencers, N_bots=N_bots, N_interests=N_interests,
                                random_const=random_const, random_phy_const=random_phy_const, int_avg=int_avg, int_var=int_var,
                                recover_avg=recover_avg, recover_var=recover_var, vuln_avg=vuln_avg, vuln_var=vuln_var,
                                reshare_avg=reshare_avg, reshare_var=reshare_var, weighted=weighted)
+                        
+        self.network.generate_common(random_const, random_phy_const)
+        filename = "net_common"
+        with open(filename, 'wb') as handle:
+            pickle.dump(self.network, handle)
+
+        filename = "net_influencers"
+        with open(filename, 'wb') as handle:
+            pickle.dump(self.network, handle)
+        self.network.generate_influencers(random_const, random_phy_const)
+
+        filename = "net_bots"
+        with open(filename, 'wb') as handle:
+            pickle.dump(self.network, handle)
+        self.network.generate_bots()
+
         self.sim_network = None
         self.events_queue = PriorityQueue()
 
@@ -30,7 +47,7 @@ class Simulator:
 
     def initial_infection(self, first_infect):
         if first_infect is None:
-            first_infect = randint(0, self.N-1)
+            first_infect = randint(0, self.N_common-1)
         self.sim_network.nodes[first_infect].score = 1
         self.sim_network.nodes[first_infect].reshare_rate = 1
         self.sim_network.nodes[first_infect].recover_rate = 0

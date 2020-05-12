@@ -90,7 +90,7 @@ class Node:
                 message_type = self.message_queue[i]
 
                 if message_type == -1:
-                    k = 0.2
+                    k = 0.1
                 else:
                     k = 1
                     can_fact_check = True
@@ -130,6 +130,8 @@ class Network:
                  weighted=True):
         self.N_common = N_common
         self.N_influencers = N_influencers
+        self.N_bots = N_bots
+
         self.is_weighted = weighted
         self.nodes = {}
         self.available_id = 0
@@ -139,10 +141,9 @@ class Network:
         self.reshare_avg, self.reshare_var = reshare_avg, reshare_var
         self.int_avg, self.int_var = int_avg, int_var
 
-        self.generate_common(random_const, random_phy_const)
-        self.generate_influencers(random_const, random_phy_const)
-
-        self.generate_bots(N_bots)
+        #self.generate_common(random_const, random_phy_const)
+        #self.generate_influencers(random_const, random_phy_const)
+        #self.generate_bots()
 
         # First node that starts infection. Useful for statistics
         self.infected_node = None
@@ -246,10 +247,10 @@ class Network:
 
             n += 1
 
-    def generate_bots(self, N_bots):
+    def generate_bots(self):
         n = 0
 
-        while n < N_bots:
+        while n < self.N_bots:
             idx = self.gen_node(NodeType.Bot)
             self.nodes[idx].score = 1
 
@@ -266,6 +267,8 @@ class Network:
                     self.nodes[idx].add_adj(Edge(idx, b, weight))
                     self.nodes[idx].add_adj(Edge(b, idx, weight))
             
+            n+=1
+            """
             print("OUT: {}".format(len(self.nodes[idx].adj)))
             cont = 0
             for i in self.nodes.keys():
@@ -274,8 +277,7 @@ class Network:
                         cont += 1
 
             print("IN: {}".format(cont))
-
-            n += 1
+            """
 
     def average_score(self):
         tot = 0
