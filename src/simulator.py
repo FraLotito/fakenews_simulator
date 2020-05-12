@@ -16,21 +16,6 @@ class Simulator:
                                random_const=random_const, random_phy_const=random_phy_const, int_avg=int_avg, int_var=int_var,
                                recover_avg=recover_avg, recover_var=recover_var, vuln_avg=vuln_avg, vuln_var=vuln_var,
                                reshare_avg=reshare_avg, reshare_var=reshare_var, weighted=weighted)
-                        
-        self.network.generate_common(random_const, random_phy_const)
-        filename = "net_common"
-        with open(filename, 'wb') as handle:
-            pickle.dump(self.network, handle)
-
-        filename = "net_influencers"
-        with open(filename, 'wb') as handle:
-            pickle.dump(self.network, handle)
-        self.network.generate_influencers(random_const, random_phy_const)
-
-        filename = "net_bots"
-        with open(filename, 'wb') as handle:
-            pickle.dump(self.network, handle)
-        self.network.generate_bots()
 
         self.sim_network = None
         self.events_queue = PriorityQueue()

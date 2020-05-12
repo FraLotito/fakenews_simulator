@@ -141,9 +141,9 @@ class Network:
         self.reshare_avg, self.reshare_var = reshare_avg, reshare_var
         self.int_avg, self.int_var = int_avg, int_var
 
-        #self.generate_common(random_const, random_phy_const)
-        #self.generate_influencers(random_const, random_phy_const)
-        #self.generate_bots()
+        self.generate_common(random_const, random_phy_const)
+        self.generate_influencers(random_const, random_phy_const)
+        self.generate_bots()
 
         # First node that starts infection. Useful for statistics
         self.infected_node = None
