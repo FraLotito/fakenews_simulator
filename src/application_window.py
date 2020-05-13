@@ -139,25 +139,23 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.vulnerability_var = self.simulator.network.vuln_var
             self.reshare_avg = self.simulator.network.reshare_avg
             self.reshare_var = self.simulator.network.reshare_var
-            self.interests_avg = self.simulator.network.interests_avg
-            self.interests_var = self.simulator.network.interests_var
-            self.random_const = self.simulator.network.random_const
-            self.random_phy_const = self.simulator.network.random_phy_const
+            self.interests_avg = self.simulator.network.int_avg
+            self.interests_var = self.simulator.network.int_var
             self.weighted = self.simulator.network.is_weighted
 
-            self.n_common_ui.setText(self.n_common)
-            self.n_influencer_ui.setText(self.n_influencer)
-            self.n_interests_ui.setText(self.n_interests)
-            self.recover_avg_ui.setText(self.recover_avg)
-            self.recover_var_ui.setText(self.recover_var)
-            self.vuln_avg_ui.setText(self.vulnerability_avg)
-            self.vuln_var_ui.setText(self.vulnerability_var)
-            self.reshare_avg_ui.setText(self.reshare_avg)
-            self.reshare_var_ui.setText(self.reshare_var)
-            self.interests_avg_ui.setText(self.interests_avg)
-            self.interests_var_ui.setText(self.interests_var)
-            self.random_const_ui.setText(self.random_const)
-            self.random_phy_const_ui.setText(self.random_phy_const)
+            self.n_common_ui.setText(str(self.n_common))
+            self.n_influencer_ui.setText(str(self.n_influencer))
+            self.n_interests_ui.setText(str(self.n_interests))
+            self.recover_avg_ui.setText(str(self.recover_avg))
+            self.recover_var_ui.setText(str(self.recover_var))
+            self.vuln_avg_ui.setText(str(self.vulnerability_avg))
+            self.vuln_var_ui.setText(str(self.vulnerability_var))
+            self.reshare_avg_ui.setText(str(self.reshare_avg))
+            self.reshare_var_ui.setText(str(self.reshare_var))
+            self.interests_avg_ui.setText(str(self.interests_avg))
+            self.interests_var_ui.setText(str(self.interests_var))
+            self.random_const_ui.setText(str(self.random_const))
+            self.random_phy_const_ui.setText(str(self.random_phy_const))
             self.weighted_ui.setChecked(self.weighted)
 
             QtWidgets.QMessageBox.about(self, "Info", "Network loaded!")

@@ -53,6 +53,10 @@ class Node:
         self.position_y = np.random.uniform(0, 1)
         self.message_queue = []
 
+        self.infection_time = None
+        if node_type == NodeType.Bot:
+            self.infection_time = 0
+
     def is_recovered(self):
         p = random.uniform(0, 1)
         if p < self.recover_rate:
@@ -60,6 +64,12 @@ class Node:
             return True
         else:
             return False
+
+    def get_infection_time(self, not_infect_val):
+        if self.infection_time is None:
+            return not_infect_val
+        else:
+            return self.infection_time
 
     def update(self):
         s = sum(self.message_queue)

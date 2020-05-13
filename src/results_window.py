@@ -171,9 +171,14 @@ class ResultsWindow(QtWidgets.QMainWindow):
             G.add_node(n)
             pos[n] = [node.position_x, node.position_y]
 
-            node_sim = list(filter(lambda x: x[0][1].infected_node == n, n_sim_results))
-            mean_score = mean([sim[-1][1].average_score() for sim in node_sim])
-            color_map.append(-mean_score)
+            not_infected_val = simulation_time[-1] * 3
+            mean_inf_time = mean([sim[-1][1].nodes[n].get_infection_time(not_infected_val) for sim in n_sim_results])
+            color_map.append(-mean_inf_time)
+
+        print(color_map)
+        print("min", min(color_map))
+        print("max", max(color_map))
+        print("mean", mean(color_map))
 
         for a, node in net.nodes.items():
             for b in node.adj:
