@@ -351,7 +351,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.engagement_news_ui.setToolTip("How much the fake news is engaging. 1 is the maximum")
         par_layout.addWidget(self.engagement_news_ui, 0, 3)
 
-        par_layout.addWidget(QLabel('SIR model:'), 0, 4)
+        par_layout.addWidget(QLabel('Discrete node score:'), 0, 4)
         self.sir_ui = QCheckBox()
         self.sir_ui.setChecked(self.SIR)
         self.sir_ui.setToolTip("")

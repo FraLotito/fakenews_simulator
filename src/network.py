@@ -296,5 +296,5 @@ class Network:
                 tot += sum(weights) / len(weights)
         return tot / len(self.nodes)
 
-    def count_score_equal(self, value):
-        return len(list(filter(lambda n: self.nodes[n].score == value, self.nodes)))
+    def count_score_equal(self, low, up):
+        return len(list(filter(lambda n: low < self.nodes[n].score <= up, self.nodes)))
