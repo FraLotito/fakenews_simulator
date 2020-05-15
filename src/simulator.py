@@ -75,6 +75,9 @@ class Simulator:
                     if p < reshare_rate and dest != first_infect:
                         self.propagate(dest, score, weight, SIR=SIR)
 
+            if self.sim_network.nodes[node_id].infection_time is None and score == -1:
+                self.sim_network.nodes[node_id].infection_time = time
+
             # se un nodo è un bot, allora si collega più spesso
             if self.sim_network.nodes[node_id].type == NodeType.Bot:
                 self.events_queue.put((time + expovariate(1/4), node_id))
