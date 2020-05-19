@@ -148,12 +148,6 @@ class Network:
         self.reshare_avg, self.reshare_var = reshare_avg, reshare_var
         self.int_avg, self.int_var = int_avg, int_var
 
-        """
-        self.generate_common(random_const, random_phy_const)
-        self.generate_influencers(random_const, random_phy_const)
-        self.generate_bots()
-        """
-
         # First node that starts infection. Useful for statistics
         self.infected_node = None
 
@@ -164,6 +158,10 @@ class Network:
                     reshare_avg=self.reshare_avg, reshare_var=self.reshare_var)
         self.available_id += 1
         self.nodes[node.id] = node
+
+        if node_type == NodeType.Bot:
+            node.reshare_rate = 1
+
         return idx
 
     def generate_common(self, random_const, random_phy_const):
@@ -223,7 +221,7 @@ class Network:
                     edge[0].weight = weight
 
         n = 0
-        if lim == None:
+        if lim is None:
             lim = self.N_influencers
 
         while n < lim:
@@ -250,9 +248,8 @@ class Network:
             n += 1
 
     def generate_bots(self, lim=None):
-        print("---- BOTS INFO: -----")
         n = 0
-        if lim == None:
+        if lim is None:
             lim = self.N_bots
 
         while n < lim:
