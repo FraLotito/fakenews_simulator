@@ -7,10 +7,13 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
+from tqdm import tqdm
+
 
 class Simulator:
     def __init__(self, N_common, N_influencers, N_bots, N_interests, random_const, random_phy_const, engagement_news,
-                 int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var, weighted=True):
+                 int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var,
+                 weighted=True):
 
         self.N_common = N_common
         self.N_influencers = N_influencers
@@ -19,7 +22,8 @@ class Simulator:
         self.random_phy_const = random_phy_const
         self.engagement_news = engagement_news
         self.network = Network(N_common=N_common, N_influencers=N_influencers, N_bots=N_bots, N_interests=N_interests,
-                               random_const=random_const, random_phy_const=random_phy_const, int_avg=int_avg, int_var=int_var,
+                               random_const=random_const, random_phy_const=random_phy_const, int_avg=int_avg,
+                               int_var=int_var,
                                recover_avg=recover_avg, recover_var=recover_var, vuln_avg=vuln_avg, vuln_var=vuln_var,
                                reshare_avg=reshare_avg, reshare_var=reshare_var, weighted=weighted)
 
@@ -43,11 +47,11 @@ class Simulator:
                 order.append(i)
         shuffle(order)
         for i in range(self.N - 1):
-            self.events_queue.put((expovariate(1/16), order[i]))
+            self.events_queue.put((expovariate(1 / 16), order[i]))
 
     def initial_infection(self, first_infect):
         if first_infect is None:
-            first_infect = randint(0, self.N_common-1)
+            first_infect = randint(0, self.N_common - 1)
         self.sim_network.nodes[first_infect].score = 1
         self.sim_network.nodes[first_infect].reshare_rate = 1
         self.sim_network.nodes[first_infect].recover_rate = 0
@@ -109,9 +113,9 @@ class Simulator:
 
             # se un nodo è un bot, allora si collega più spesso
             if self.sim_network.nodes[node_id].type == NodeType.Bot:
-                self.events_queue.put((time + expovariate(1/4), node_id))
+                self.events_queue.put((time + expovariate(1 / 4), node_id))
             else:
-                self.events_queue.put((time + expovariate(1/16), node_id))
+                self.events_queue.put((time + expovariate(1 / 16), node_id))
 
         return s, i, r
 
@@ -129,6 +133,7 @@ class Simulator:
             elif message > 1:
                 message = 1
             self.sim_network.nodes[dest].message_queue.append(message)
+
 
 def draw_simulation_network_roles(network):
     G = nx.DiGraph()
@@ -153,8 +158,10 @@ def draw_simulation_network_roles(network):
             edge_labels.append(b)
 
     f = plt.figure()
-    nx.draw(G, ax=f.add_subplot(111), pos=pos, with_labels=True, font_size=4, node_size=60, node_color=color_map, edge_color="grey", width=0.5, arrowsize=5)
+    nx.draw(G, ax=f.add_subplot(111), pos=pos, with_labels=True, font_size=4, node_size=60, node_color=color_map,
+            edge_color="grey", width=0.5, arrowsize=5)
     f.savefig("graph.pdf")
+
 
 def draw_degree_distribution(network):
     import collections
@@ -175,10 +182,72 @@ def draw_degree_distribution(network):
     fig.savefig("degree.pdf")
 
 
+from multiprocessing import Pool, Manager
+
+res_queue = Manager().Queue()
+
+
+def process_fn(_):
+    s = copy.deepcopy(simulator)
+    res_queue.put(s.simulate(max_time, recovered_debunking, SIR, first_infect=None))
+    return True
+
+
+def run_simulations(file_name):
+    with Pool() as pool:
+        for _ in tqdm(pool.imap_unordered(process_fn, range(N)), total=N):
+            pass
+
+    print("Finished simulating", file_name)
+
+    S = []
+    I = []
+    R = []
+
+    for i in tqdm(range(N)):
+        s, i, r = res_queue.get(timeout=1)
+        for k in range(len(s)):
+            if len(S) < len(s):
+                S.append(0)
+                I.append(0)
+                R.append(0)
+            S[k] += s[k]
+            I[k] += i[k]
+            R[k] += r[k]
+
+    for v in range(len(S)):
+        S[v] /= N
+        I[v] /= N
+        R[v] /= N
+
+    print("Finished norm data", file_name)
+
+    m = max(I)
+    xm = np.argmax(I) * 20
+    M = []
+    for i in range(len(S)):
+        M.append(m)
+
+    times = [20 * i for i in range(len(S))]
+
+    plt.plot(times, S, label="S")
+    plt.plot(times, I, label="I")
+    plt.plot(times, R, label="R")
+    plt.plot(times, M, color="r", label="Max I")
+    plt.axvline(x=xm, color='r', linestyle='dashed')
+    plt.legend()
+    plt.savefig(file_name + '.pdf')
+    plt.clf()
+
+    print("Saved file", file_name)
+
+
 if __name__ == "__main__":
-    n_common = 200
-    n_influencer = 3
-    n_bots = 3
+    const = 10
+
+    n_common = 200 * const
+    n_influencer = 3 * const
+    n_bots = 3 * const
     n_interests = 5
     engagement_news = 1.0
     vulnerability_avg = 0.5
@@ -189,138 +258,30 @@ if __name__ == "__main__":
     recover_var = 0.2
     interests_avg = 0
     interests_var = 0.4
-    random_const = 0.1
-    random_phy_const = 0.1
+    random_const = (0.1 + 0.02 * const) / const
+    random_phy_const = (0.1 + 0.02 * const) / const
     SIR = True
     weighted = False
     recovered_debunking = True
-    max_time = 1500
+    max_time = 5000
+
+    N = 300
 
     simulator = Simulator(N_common=n_common, N_influencers=n_influencer, N_interests=n_interests,
-                                    N_bots=n_bots, engagement_news=engagement_news,
-                                    random_const=random_const, random_phy_const=random_phy_const,
-                                    recover_avg=recover_avg, recover_var=recover_var,
-                                    vuln_avg=vulnerability_avg, vuln_var=vulnerability_var,
-                                    reshare_avg=reshare_avg, reshare_var=reshare_var,
-                                    int_avg=interests_avg, int_var=interests_var, weighted=weighted)
+                          N_bots=n_bots, engagement_news=engagement_news,
+                          random_const=random_const, random_phy_const=random_phy_const,
+                          recover_avg=recover_avg, recover_var=recover_var,
+                          vuln_avg=vulnerability_avg, vuln_var=vulnerability_var,
+                          reshare_avg=reshare_avg, reshare_var=reshare_var,
+                          int_avg=interests_avg, int_var=interests_var, weighted=weighted)
 
-
-    
-    S = []
-    I = []
-    R = []
-
-    N = 100
-    for c in range(N):
-        if c % 20 == 0:
-            print(c)
-        s, i, r = simulator.simulate(max_time, recovered_debunking, SIR, first_infect=None)
-        for k in range(len(s)):
-            if len(S) < len(s):
-                S.append(0)
-                I.append(0)
-                R.append(0)
-            S[k] += s[k]
-            I[k] += i[k]
-            R[k] += r[k]
-
-    for v in range(len(S)):
-        S[v] /= N
-        I[v] /= N
-        R[v] /= N
-
-    m = max(I)
-    xm = np.argmax(I)
-    M = []
-    for i in range(len(S)):
-        M.append(m)
-
-    plt.plot(S, label="S")
-    plt.plot(I, label="I")
-    plt.plot(R, label="R")
-    plt.plot(M, color="r", label="Max I")
-    plt.axvline(x=xm, color='r', linestyle='dashed')
-    plt.legend()
-    plt.savefig('common.pdf')
-    plt.clf()
-
+    run_simulations('common')
 
     simulator.add_influencers(n_influencer)
-
-    S = []
-    I = []
-    R = []
-    for c in range(N):
-        if c % 20 == 0:
-            print(c)
-        s, i, r = simulator.simulate(max_time, recovered_debunking, SIR, first_infect=None)
-        for k in range(len(s)):
-            if len(S) < len(s):
-                S.append(0)
-                I.append(0)
-                R.append(0)
-            S[k] += s[k]
-            I[k] += i[k]
-            R[k] += r[k]
-
-    for v in range(len(S)):
-        S[v] /= N
-        I[v] /= N
-        R[v] /= N
-
-    m = max(I)
-    M = []
-    xm = np.argmax(I)
-    for i in range(len(S)):
-        M.append(m)
-
-    plt.plot(S, label="S")
-    plt.plot(I, label="I")
-    plt.plot(R, label="R")
-    plt.plot(M, color="r", label="Max I")
-    plt.axvline(x=xm, color='r', linestyle='dashed')
-    plt.legend()
-    plt.savefig('influencers.pdf')
-    plt.clf()
-
+    run_simulations('influencers')
 
     simulator.add_bots(n_bots)
-    S = []
-    I = []
-    R = []
-    for c in range(N):
-        if c % 20 == 0:
-            print(c)
-        s, i, r = simulator.simulate(max_time, recovered_debunking, SIR, first_infect=None)
-        for k in range(len(s)):
-            if len(S) < len(s):
-                S.append(0)
-                I.append(0)
-                R.append(0)
-            S[k] += s[k]
-            I[k] += i[k]
-            R[k] += r[k]
+    run_simulations('bots')
 
-    for v in range(len(S)):
-        S[v] /= N
-        I[v] /= N
-        R[v] /= N
-
-    m = max(I)
-    xm = np.argmax(I)
-    M = []
-    for i in range(len(S)):
-        M.append(m)
-
-    plt.plot(S, label="S")
-    plt.plot(I, label="I")
-    plt.plot(R, label="R")
-    plt.plot(M, color="r", label="Max I")
-    plt.axvline(x=xm, color='r', linestyle='dashed')
-    plt.legend()
-    plt.savefig('bots.pdf')
-    plt.clf()
-
-    
     draw_simulation_network_roles(simulator.network)
     draw_degree_distribution(simulator.network)
