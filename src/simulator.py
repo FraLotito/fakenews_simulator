@@ -10,15 +10,31 @@ class Simulator:
                  int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var, weighted=True):
         
         self.N_common = N_common
-        self.N = N_common + N_influencers + N_bots
+        self.N_influencers = N_influencers
+        self.N_bots = N_bots
+        self.random_const = random_const
+        self.random_phy_const = random_phy_const
         self.engagement_news = engagement_news
         self.network = Network(N_common=N_common, N_influencers=N_influencers, N_bots=N_bots, N_interests=N_interests,
                                random_const=random_const, random_phy_const=random_phy_const, int_avg=int_avg, int_var=int_var,
                                recover_avg=recover_avg, recover_var=recover_var, vuln_avg=vuln_avg, vuln_var=vuln_var,
                                reshare_avg=reshare_avg, reshare_var=reshare_var, weighted=weighted)
 
+        self.network.generate_common(self.random_const, self.random_phy_const)
+        self.N = len(self.network.nodes)
         self.sim_network = None
-        self.events_queue = PriorityQueue()
+
+    def add_influencers(self, n=None):
+        if n is None:
+            n = self.N_influencers
+        self.network.generate_influencers(self.random_const, self.random_phy_const, n)
+        self.N = len(self.network.nodes)
+
+    def add_bots(self, n=None):
+        if n is None:
+            n = self.N_bots
+        self.network.generate_bots(n)
+        self.N = len(self.network.nodes)
 
     def first_population_queue(self, first_infect):
         order = []
@@ -28,17 +44,18 @@ class Simulator:
                 order.append(i)
         shuffle(order)
         for i in range(self.N - 1):
-            self.events_queue.put((expovariate(1/16), order[i]))
+            self.events_queue.put((expovariate(1 / 16), order[i]))
 
     def initial_infection(self, first_infect):
         if first_infect is None:
-            first_infect = randint(0, self.N_common-1)
+            first_infect = randint(0, self.N_common - 1)
         self.sim_network.nodes[first_infect].score = 1
         self.sim_network.nodes[first_infect].reshare_rate = 1
         self.sim_network.nodes[first_infect].recover_rate = 0
         return first_infect
 
     def simulate(self, max_time, recovered_debunking=False, SIR=False, first_infect=None):
+        self.events_queue = PriorityQueue()
         self.sim_network = copy.deepcopy(self.network)
         first_infect = self.initial_infection(first_infect)
         self.sim_network.infected_node = first_infect
@@ -46,7 +63,7 @@ class Simulator:
 
         hist_status = []
         # Add simulation checkpoint
-        for i in range(0, max_time, 50):
+        for i in range(0, max_time, 20):
             self.events_queue.put((i, -1))
 
         time = 0
@@ -80,9 +97,9 @@ class Simulator:
 
             # se un nodo è un bot, allora si collega più spesso
             if self.sim_network.nodes[node_id].type == NodeType.Bot:
-                self.events_queue.put((time + expovariate(1/4), node_id))
+                self.events_queue.put((time + expovariate(1 / 4), node_id))
             else:
-                self.events_queue.put((time + expovariate(1/16), node_id))
+                self.events_queue.put((time + expovariate(1 / 16), node_id))
 
         return hist_status
 

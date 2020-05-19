@@ -2,9 +2,6 @@ from enum import IntEnum
 import random
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-
-from igraph import *
 
 
 def euclidean_distance(a, b):
@@ -151,9 +148,11 @@ class Network:
         self.reshare_avg, self.reshare_var = reshare_avg, reshare_var
         self.int_avg, self.int_var = int_avg, int_var
 
+        """
         self.generate_common(random_const, random_phy_const)
         self.generate_influencers(random_const, random_phy_const)
         self.generate_bots()
+        """
 
         # First node that starts infection. Useful for statistics
         self.infected_node = None
@@ -207,7 +206,7 @@ class Network:
 
     # TODO: fare attenzione alle random_const (ci sono costanti moltiplicative)
 
-    def generate_influencers(self, random_const, random_phy_const):
+    def generate_influencers(self, random_const, random_phy_const, lim=None):
 
         def add_proximity_edge(idx_a, idx_b, dist, random_const):
             prox = (1 - dist)
@@ -224,7 +223,10 @@ class Network:
                     edge[0].weight = weight
 
         n = 0
-        while n < self.N_influencers:
+        if lim == None:
+            lim = self.N_influencers
+
+        while n < lim:
             idx = self.gen_node(NodeType.Influencer)
 
             for b in self.nodes.keys():
@@ -240,28 +242,20 @@ class Network:
                 if idx == b:
                     continue
                 dist = self.nodes[idx].compute_distance(self.nodes[b])
-                add_proximity_edge(b, idx, dist, random_const * 0.5)
+                add_proximity_edge(b, idx, dist, random_const)
 
                 phys_dist = self.nodes[idx].compute_physical_distance(self.nodes[b])
-                add_proximity_edge(b, idx, phys_dist, random_phy_const * 0.5)
-
-            """
-            print("OUT: {}".format(len(self.nodes[idx].adj)))
-            cont = 0
-            for i in self.nodes.keys():
-                for j in self.nodes[i].adj:
-                    if j.dest == idx:
-                        cont += 1
-
-            print("IN: {}".format(cont))
-            """
+                add_proximity_edge(b, idx, phys_dist * 0.5, random_phy_const * 0.5)
 
             n += 1
 
-    def generate_bots(self):
+    def generate_bots(self, lim=None):
+        print("---- BOTS INFO: -----")
         n = 0
+        if lim == None:
+            lim = self.N_bots
 
-        while n < self.N_bots:
+        while n < lim:
             idx = self.gen_node(NodeType.Bot)
             self.nodes[idx].score = 1
 
@@ -270,7 +264,7 @@ class Network:
                     continue
                 
                 p = random.uniform(0, 1)
-                if p < 0.1:
+                if p < 0.05:
                     if self.is_weighted:
                         weight = 0.1
                     else:
@@ -278,17 +272,7 @@ class Network:
                     self.nodes[idx].add_adj(Edge(idx, b, weight))
                     self.nodes[idx].add_adj(Edge(b, idx, weight))
             
-            n+=1
-            """
-            print("OUT: {}".format(len(self.nodes[idx].adj)))
-            cont = 0
-            for i in self.nodes.keys():
-                for j in self.nodes[i].adj:
-                    if j.dest == idx:
-                        cont += 1
-
-            print("IN: {}".format(cont))
-            """
+            n += 1
 
     def average_score(self):
         tot = 0

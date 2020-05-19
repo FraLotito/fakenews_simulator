@@ -105,6 +105,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                                    reshare_avg=self.reshare_avg, reshare_var=self.reshare_var,
                                    int_avg=self.interests_avg, int_var=self.interests_var, weighted=self.weighted)
 
+        self.simulator.add_influencers()
+        self.simulator.add_bots()
+
         if not skip_draw:
             self.draw_network()
 
