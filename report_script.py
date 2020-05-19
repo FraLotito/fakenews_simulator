@@ -141,7 +141,7 @@ if __name__ == "__main__":
     recovered_debunking = True
     max_time = 5000
 
-    N = 300
+    N = 10
 
     simulator = Simulator(N_common=n_common, N_influencers=n_influencer, N_interests=n_interests,
                           N_bots=n_bots, engagement_news=engagement_news,

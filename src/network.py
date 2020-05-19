@@ -83,7 +83,7 @@ class Node:
         else:
             return False
 
-    def update_sir(self):
+    def update_sir(self, engagement_news):
         number_of_messages = len(self.message_queue)
 
         if self.type == NodeType.Bot:
@@ -94,7 +94,7 @@ class Node:
 
             for i in range(number_of_messages):
                 p = random.uniform(0, 1)
-                message_type = self.message_queue[i]
+                message_type, weight = self.message_queue[i]
 
                 if message_type == -1:
                     k = 0.1
@@ -102,7 +102,7 @@ class Node:
                     k = 1
                     can_fact_check = True
 
-                if p < self.vulnerability * k:
+                if p < self.vulnerability * k * weight * engagement_news:
                     self.score = message_type
                     can_fact_check = False
                     

@@ -101,7 +101,7 @@ class Simulator:
             if not SIR:
                 self.sim_network.nodes[node_id].update()
             else:
-                self.sim_network.nodes[node_id].update_sir()
+                self.sim_network.nodes[node_id].update_sir(self.engagement_news)
 
             score = self.sim_network.nodes[node_id].score
 
@@ -130,7 +130,7 @@ class Simulator:
 
     def propagate(self, dest, score, weight, SIR):
         if SIR:
-            self.sim_network.nodes[dest].message_queue.append(score)
+            self.sim_network.nodes[dest].message_queue.append((score, weight))
         else:
             if score > 0:
                 En = self.engagement_news
