@@ -67,30 +67,8 @@ res_queue = manager.Queue()
 
 def process_fn(_, sim):
     s = copy.deepcopy(sim)
-    results = s.simulate(max_time, recovered_debunking, SIR, first_infect=None)
-
-    s = []
-    i = []
-    r = []
-
-    for net in results:
-        net = net[1]
-        S = 0
-        I = 0
-        R = 0
-        for k in net.nodes.keys():
-            if net.nodes[k].type == NodeType.Common:
-                if net.nodes[k].score == 1:
-                    I += 1
-                elif net.nodes[k].score == 0:
-                    S += 1
-                else:
-                    R += 1
-        s.append(S)
-        i.append(I)
-        r.append(R)
-
-    res_queue.put((s, i, r))
+    results = s.simulate(max_time, recovered_debunking, SIR, first_infect=None, return_nets=False)
+    res_queue.put(results)
     return True
 
 
@@ -164,7 +142,7 @@ if __name__ == "__main__":
     recovered_debunking = True
     max_time = 5000
 
-    N = 10
+    N = 300
 
     simulator = Simulator(N_common=n_common, N_influencers=n_influencer, N_interests=n_interests,
                           N_bots=n_bots, engagement_news=engagement_news,

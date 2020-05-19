@@ -54,7 +54,7 @@ class Simulator:
         self.sim_network.nodes[first_infect].recover_rate = 0
         return first_infect
 
-    def simulate(self, max_time, recovered_debunking=False, SIR=False, first_infect=None):
+    def simulate(self, max_time, recovered_debunking=False, SIR=False, first_infect=None, return_nets=True):
         self.events_queue = PriorityQueue()
         self.sim_network = copy.deepcopy(self.network)
         first_infect = self.initial_infection(first_infect)
@@ -67,13 +67,33 @@ class Simulator:
             self.events_queue.put((i, -1))
 
         time = 0
+        s = []
+        i = []
+        r = []
+
         while time < max_time:
             t, node_id = self.events_queue.get()
             
             time = t
 
             if node_id == -1:  # checkpoint
-                hist_status.append((time, copy.deepcopy(self.sim_network)))
+                if not return_nets:
+                    S = 0
+                    I = 0
+                    R = 0
+                    for k in self.sim_network.nodes.keys():
+                        if self.sim_network.nodes[k].type == NodeType.Common:
+                            if self.sim_network.nodes[k].score == 1:
+                                I += 1
+                            elif self.sim_network.nodes[k].score == 0:
+                                S += 1
+                            else:
+                                R += 1
+                    s.append(S)
+                    i.append(I)
+                    r.append(R)
+                else:
+                    hist_status.append((time, copy.deepcopy(self.sim_network)))
                 continue
             
             if not SIR:
@@ -101,7 +121,10 @@ class Simulator:
             else:
                 self.events_queue.put((time + expovariate(1 / 16), node_id))
 
-        return hist_status
+        if return_nets:
+            return hist_status
+        else:
+            return s, i, r
 
     def propagate(self, dest, score, weight, SIR):
         if SIR:
