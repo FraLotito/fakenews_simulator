@@ -3,12 +3,12 @@ import math
 from queue import PriorityQueue
 from random import expovariate, shuffle, uniform, randint
 import copy
-import pickle
+
 
 class Simulator:
     def __init__(self, N_common, N_influencers, N_bots, N_interests, random_const, random_phy_const, engagement_news,
-                 int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var, weighted=True):
-        
+                 int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var):
+
         self.N_common = N_common
         self.N_influencers = N_influencers
         self.N_bots = N_bots
@@ -16,9 +16,10 @@ class Simulator:
         self.random_phy_const = random_phy_const
         self.engagement_news = engagement_news
         self.network = Network(N_common=N_common, N_influencers=N_influencers, N_bots=N_bots, N_interests=N_interests,
-                               random_const=random_const, random_phy_const=random_phy_const, int_avg=int_avg, int_var=int_var,
+                               random_const=random_const, random_phy_const=random_phy_const, int_avg=int_avg,
+                               int_var=int_var,
                                recover_avg=recover_avg, recover_var=recover_var, vuln_avg=vuln_avg, vuln_var=vuln_var,
-                               reshare_avg=reshare_avg, reshare_var=reshare_var, weighted=weighted)
+                               reshare_avg=reshare_avg, reshare_var=reshare_var)
 
         self.network.generate_common(self.random_const, self.random_phy_const)
         self.N = len(self.network.nodes)
@@ -54,7 +55,8 @@ class Simulator:
         self.sim_network.nodes[first_infect].recover_rate = 0
         return first_infect
 
-    def simulate(self, max_time, recovered_debunking=False, SIR=False, first_infect=None, return_nets=True):
+    def simulate(self, max_time, recovered_debunking=False, SIR=False, first_infect=None, return_nets=True,
+                 weighted=True):
         self.events_queue = PriorityQueue()
         self.sim_network = copy.deepcopy(self.network)
         first_infect = self.initial_infection(first_infect)
@@ -73,7 +75,7 @@ class Simulator:
 
         while time < max_time:
             t, node_id = self.events_queue.get()
-            
+
             time = t
 
             if node_id == -1:  # checkpoint
@@ -95,7 +97,7 @@ class Simulator:
                 else:
                     hist_status.append((time, copy.deepcopy(self.sim_network)))
                 continue
-            
+
             if not SIR:
                 self.sim_network.nodes[node_id].update()
             else:
@@ -108,7 +110,7 @@ class Simulator:
                 for edge in self.sim_network.nodes[node_id].adj:
                     p = uniform(0, 1)
                     dest = edge.dest
-                    weight = edge.weight
+                    weight = edge.weight if weighted else 1
                     if p < reshare_rate and dest != first_infect:
                         self.propagate(dest, score, weight, SIR=SIR)
 

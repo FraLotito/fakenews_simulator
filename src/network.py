@@ -133,13 +133,11 @@ class Node:
 
 class Network:
     def __init__(self, N_common, N_influencers, N_bots, N_interests, random_const, random_phy_const,
-                 int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var,
-                 weighted=True):
+                 int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var):
         self.N_common = N_common
         self.N_influencers = N_influencers
         self.N_bots = N_bots
 
-        self.is_weighted = weighted
         self.nodes = {}
         self.available_id = 0
         self.N_interests = N_interests
@@ -171,10 +169,7 @@ class Network:
             edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
             p = random.uniform(0, 1)
             if (dist < random_const or len(edge) > 0) and p < 0.5:
-                if self.is_weighted:
-                    weight = prox
-                else:
-                    weight = 1
+                weight = prox
                 if len(edge) == 0:
                     self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, weight))
                     self.nodes[idx_b].add_adj(Edge(idx_b, idx_a, weight))
@@ -210,10 +205,7 @@ class Network:
             prox = (1 - dist)
             if dist < random_const:
                 edge = list(filter(lambda x: x.dest == idx_b, self.nodes[idx_a].adj))
-                if self.is_weighted:
-                    weight = prox
-                else:
-                    weight = 1
+                weight = prox
                 if len(edge) == 0:
                     self.nodes[idx_a].add_adj(Edge(idx_a, idx_b, weight))
                 else:
@@ -261,11 +253,8 @@ class Network:
                     continue
                 
                 p = random.uniform(0, 1)
-                if p < 0.05:
-                    if self.is_weighted:
-                        weight = 0.1
-                    else:
-                        weight = 1
+                if p < 0.02:
+                    weight = 0.1
                     self.nodes[idx].add_adj(Edge(idx, b, weight))
                     self.nodes[idx].add_adj(Edge(b, idx, weight))
             

@@ -7,7 +7,6 @@ import networkx as nx
 from tqdm import tqdm
 from multiprocessing import Pool, Manager
 import pathlib
-from functools import partial
 
 
 def draw_simulation_network_roles(network):
@@ -65,16 +64,16 @@ manager = Manager()
 res_queue = manager.Queue()
 
 
-def process_fn(_, sim):
-    s = copy.deepcopy(sim)
-    results = s.simulate(max_time, recovered_debunking, SIR, first_infect=None, return_nets=False)
+def process_fn(_):
+    s = copy.deepcopy(simulator)
+    results = s.simulate(max_time, recovered_debunking, SIR, first_infect=None, return_nets=False, weighted=weighted)
     res_queue.put(results)
     return True
 
 
 def run_simulations(file_name):
     with Pool() as pool:
-        for _ in tqdm(pool.imap_unordered(partial(process_fn, sim=simulator), range(N)), total=N):
+        for _ in tqdm(pool.imap_unordered(process_fn, range(N)), total=N):
             pass
 
     S = []
@@ -150,7 +149,7 @@ if __name__ == "__main__":
                           recover_avg=recover_avg, recover_var=recover_var,
                           vuln_avg=vulnerability_avg, vuln_var=vulnerability_var,
                           reshare_avg=reshare_avg, reshare_var=reshare_var,
-                          int_avg=interests_avg, int_var=interests_var, weighted=weighted)
+                          int_avg=interests_avg, int_var=interests_var)
 
     run_simulations('common')
 
@@ -159,6 +158,12 @@ if __name__ == "__main__":
 
     simulator.add_bots(n_bots)
     run_simulations('bots')
+
+    weighted = True
+    run_simulations('weighted_bots')
+
+    simulator.engagement_news = 0.5
+    run_simulations('engagement_0.5')
 
     draw_simulation_network_roles(simulator.network)
     draw_degree_distribution(simulator.network)
