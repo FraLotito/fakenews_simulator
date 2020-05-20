@@ -7,6 +7,8 @@ import networkx as nx
 from tqdm import tqdm
 from multiprocessing import Pool, Manager
 import pathlib
+from math import exp
+from functools import partial
 
 
 def draw_simulation_network_roles(network):
@@ -121,6 +123,10 @@ def run_simulations(file_name):
     print("Finished simulating", file_name)
 
 
+def calc_engagement(t, initial_val=1.0):
+    return initial_val * exp(-1 / (max_time / 2) * t)
+
+
 if __name__ == "__main__":
     const = 10
 
@@ -128,7 +134,6 @@ if __name__ == "__main__":
     n_influencer = 3 * const
     n_bots = 3 * const
     n_interests = 5
-    engagement_news = 1.0
     vulnerability_avg = 0.5
     vulnerability_var = 0.2
     reshare_avg = 0.5
@@ -143,8 +148,9 @@ if __name__ == "__main__":
     weighted = False
     recovered_debunking = True
     max_time = 5000
+    engagement_news = calc_engagement
 
-    N = 800
+    N = 100
 
     simulator = Simulator(N_common=n_common, N_influencers=n_influencer, N_interests=n_interests,
                           N_bots=n_bots, engagement_news=engagement_news,
@@ -156,19 +162,25 @@ if __name__ == "__main__":
 
     run_simulations('common')
 
-    simulator.add_influencers(n_influencer)
-    run_simulations('influencers')
+    steps = 3
 
-    simulator.add_bots(n_bots)
-    run_simulations('bots')
+    num = int(n_influencer / steps)
+    for i in range(steps):
+        simulator.add_influencers(num)
+        run_simulations('influencers_' + str(num*(i+1)))
+
+    num = int(n_bots / steps)
+    for i in range(steps):
+        simulator.add_bots(num)
+        run_simulations('bots_' + str(num*(i+1)))
 
     weighted = True
     run_simulations('weighted_bots')
 
-    simulator.engagement_news = 0.5
+    simulator.engagement_news = partial(calc_engagement, initial_val=0.5)
     run_simulations('engagement_0.5')
 
-    simulator.engagement_news = 0.2
+    simulator.engagement_news = partial(calc_engagement, initial_val=0.2)
     run_simulations('engagement_0.2')
 
     draw_simulation_network_roles(simulator.network)

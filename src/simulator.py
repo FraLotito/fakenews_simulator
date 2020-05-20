@@ -101,7 +101,7 @@ class Simulator:
             if not SIR:
                 self.sim_network.nodes[node_id].update()
             else:
-                self.sim_network.nodes[node_id].update_sir(self.engagement_news)
+                self.sim_network.nodes[node_id].update_sir(self.engagement_news(time))
 
             score = self.sim_network.nodes[node_id].score
 
