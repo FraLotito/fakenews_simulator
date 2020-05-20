@@ -45,18 +45,21 @@ def draw_degree_distribution(network):
     for n, node in network.nodes.items():
         degree_sequence.append(len(node.adj))
 
+    fig, ax = plt.subplots()
+    """
     degreeCount = collections.Counter(degree_sequence)
     deg, cnt = zip(*degreeCount.items())
-    fig, ax = plt.subplots()
     plt.bar(deg, cnt, width=0.80, color='b')
+    """
+    plt.hist(degree_sequence, bins=100)
 
     pathlib.Path('results').mkdir(parents=True, exist_ok=True)
 
     plt.title("Degree Histogram")
     plt.ylabel("Count")
     plt.xlabel("Degree")
-    ax.set_xticks([d + 0.4 for d in deg])
-    ax.set_xticklabels(deg)
+    #ax.set_xticks([d + 0.4 for d in deg])
+    #ax.set_xticklabels(deg)
     fig.savefig("results/degree.pdf")
 
 
@@ -141,7 +144,7 @@ if __name__ == "__main__":
     recovered_debunking = True
     max_time = 5000
 
-    N = 10
+    N = 800
 
     simulator = Simulator(N_common=n_common, N_influencers=n_influencer, N_interests=n_interests,
                           N_bots=n_bots, engagement_news=engagement_news,
@@ -164,6 +167,9 @@ if __name__ == "__main__":
 
     simulator.engagement_news = 0.5
     run_simulations('engagement_0.5')
+
+    simulator.engagement_news = 0.2
+    run_simulations('engagement_0.2')
 
     draw_simulation_network_roles(simulator.network)
     draw_degree_distribution(simulator.network)
