@@ -9,6 +9,7 @@ from multiprocessing import Pool, Manager
 import pathlib
 from math import exp
 from functools import partial
+import pickle
 
 
 def draw_simulation_network_roles(network):
@@ -123,6 +124,11 @@ def run_simulations(file_name):
     print("Finished simulating", file_name)
 
 
+def save_net(filename):
+    with open('results/' + filename, 'wb') as handle:
+        pickle.dump(simulator.network, handle)
+
+
 def calc_engagement(t, initial_val=1.0):
     return initial_val * exp(-1 / (max_time / 2) * t)
 
@@ -160,6 +166,7 @@ if __name__ == "__main__":
                           reshare_avg=reshare_avg, reshare_var=reshare_var,
                           int_avg=interests_avg, int_var=interests_var)
 
+    save_net('common')
     run_simulations('common')
 
     steps = 3
@@ -167,12 +174,16 @@ if __name__ == "__main__":
     num = int(n_influencer / steps)
     for i in range(steps):
         simulator.add_influencers(num)
-        run_simulations('influencers_' + str(num*(i+1)))
+        name = 'influencers_' + str(num*(i+1))
+        save_net(name)
+        run_simulations(name)
 
     num = int(n_bots / steps)
     for i in range(steps):
         simulator.add_bots(num)
-        run_simulations('bots_' + str(num*(i+1)))
+        name = 'bots_' + str(num*(i+1))
+        save_net(name)
+        run_simulations(name)
 
     weighted = True
     run_simulations('weighted_bots')

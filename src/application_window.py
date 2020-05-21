@@ -103,7 +103,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                                    recover_avg=self.recover_avg, recover_var=self.recover_var,
                                    vuln_avg=self.vulnerability_avg, vuln_var=self.vulnerability_var,
                                    reshare_avg=self.reshare_avg, reshare_var=self.reshare_var,
-                                   int_avg=self.interests_avg, int_var=self.interests_var, weighted=self.weighted)
+                                   int_avg=self.interests_avg, int_var=self.interests_var)
 
         self.simulator.add_influencers()
         self.simulator.add_bots()
@@ -487,7 +487,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.recovered_debunking = self.rec_deb_ui.isChecked()
         self.simulator.engagement_news = self.engagement_news
 
-        self.sim_results = self.simulator.simulate(self.sim_time, SIR=self.SIR, recovered_debunking=self.recovered_debunking)
+        self.sim_results = self.simulator.simulate(self.sim_time, SIR=self.SIR, recovered_debunking=self.recovered_debunking,
+                                                   weighted=self.weighted)
         self.progress_bar.setValue(0)
         for i, net in enumerate(self.sim_results):
             self.draw_simulation_network(net[1])
@@ -514,7 +515,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             for n in range(n_nodes):
                 for i in range(n_sim):
                     self.n_sim_results.append(self.simulator.simulate(self.sim_time, SIR=self.SIR, first_infect=n,
-                                                                      recovered_debunking=self.recovered_debunking))
+                                                                      recovered_debunking=self.recovered_debunking,
+                                                                      weighted=self.weighted))
                 self.progress_bar.setValue(int((n + 1) / n_nodes * 100))
 
             self.show_results_window()
