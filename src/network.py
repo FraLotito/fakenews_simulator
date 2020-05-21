@@ -278,3 +278,6 @@ class Network:
 
     def count_score_equal(self, low, up):
         return len(list(filter(lambda n: low < self.nodes[n].score <= up, self.nodes)))
+
+    def count_node_type(self, node_type):
+        return len(list(filter(lambda n: n[1].type == node_type, self.nodes.items())))

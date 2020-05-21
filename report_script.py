@@ -118,6 +118,16 @@ def run_simulations(file_name):
     plt.plot(times, M, color="r", label="Max I")
     plt.axvline(x=xm, color='r', linestyle='dashed')
     plt.legend()
+
+    label_text = 'N° simulations: {} - ' \
+                 'Weighted: {} - ' \
+                 'Eng: {}\n' \
+                 'N° common: {} - ' \
+                 'N° influencers: {} - ' \
+                 'N° bots: {}'.format(N, weighted, engagament_val, simulator.network.count_node_type(NodeType.Common),
+                                      simulator.network.count_node_type(NodeType.Influencer),
+                                      simulator.network.count_node_type(NodeType.Bot))
+    plt.title(label_text)
     plt.savefig('results/' + file_name + '.pdf')
     plt.clf()
 
@@ -154,9 +164,10 @@ if __name__ == "__main__":
     weighted = False
     recovered_debunking = True
     max_time = 5000
+    engagament_val = 1.0
     engagement_news = calc_engagement
 
-    N = 100
+    N = 1
 
     simulator = Simulator(N_common=n_common, N_influencers=n_influencer, N_interests=n_interests,
                           N_bots=n_bots, engagement_news=engagement_news,
@@ -188,10 +199,12 @@ if __name__ == "__main__":
     weighted = True
     run_simulations('weighted_bots')
 
-    simulator.engagement_news = partial(calc_engagement, initial_val=0.5)
+    engagament_val = 0.5
+    simulator.engagement_news = partial(calc_engagement, initial_val=engagament_val)
     run_simulations('engagement_0.5')
 
-    simulator.engagement_news = partial(calc_engagement, initial_val=0.2)
+    engagament_val = 0.2
+    simulator.engagement_news = partial(calc_engagement, initial_val=engagament_val)
     run_simulations('engagement_0.2')
 
     draw_simulation_network_roles(simulator.network)
