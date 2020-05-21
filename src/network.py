@@ -281,3 +281,11 @@ class Network:
 
     def count_node_type(self, node_type):
         return len(list(filter(lambda n: n[1].type == node_type, self.nodes.items())))
+
+    def get_nodes_infection_time_map(self, max_time):
+        nodes = {}
+
+        for i, n in self.nodes.items():
+            nodes[i] = n.get_infection_time(max_time)
+
+        return nodes

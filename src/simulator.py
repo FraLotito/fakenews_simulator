@@ -105,6 +105,9 @@ class Simulator:
 
             score = self.sim_network.nodes[node_id].score
 
+            if self.sim_network.nodes[node_id].infection_time is None and score == 1:
+                self.sim_network.nodes[node_id].infection_time = time
+
             if score == 1 or (score == -1 and recovered_debunking):
                 reshare_rate = self.sim_network.nodes[node_id].reshare_rate
                 for edge in self.sim_network.nodes[node_id].adj:
@@ -113,9 +116,6 @@ class Simulator:
                     weight = edge.weight if weighted else 1
                     if p < reshare_rate and dest != first_infect:
                         self.propagate(dest, score, weight, SIR=SIR)
-
-            if self.sim_network.nodes[node_id].infection_time is None and score == -1:
-                self.sim_network.nodes[node_id].infection_time = time
 
             # se un nodo è un bot, allora si collega più spesso
             if self.sim_network.nodes[node_id].type == NodeType.Bot:
@@ -126,7 +126,7 @@ class Simulator:
         if return_nets:
             return hist_status
         else:
-            return s, i, r
+            return (s, i, r), self.sim_network.get_nodes_infection_time_map(max_time)
 
     def propagate(self, dest, score, weight, SIR):
         if SIR:

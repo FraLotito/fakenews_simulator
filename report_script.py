@@ -1,6 +1,7 @@
 from src.simulator import Simulator
 from src.network import NodeType
 import copy
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
@@ -70,9 +71,9 @@ manager = Manager()
 res_queue = manager.Queue()
 
 
-def process_fn(_):
+def process_fn(_, first_infect=None):
     s = copy.deepcopy(simulator)
-    results = s.simulate(max_time, recovered_debunking, SIR, first_infect=None, return_nets=False, weighted=weighted)
+    results = s.simulate(max_time, recovered_debunking, SIR, first_infect=first_infect, return_nets=False, weighted=weighted)
     res_queue.put(results)
     return True
 
@@ -87,12 +88,13 @@ def run_simulations(file_name):
     R = []
 
     for _ in range(N):
-        s, i, r = res_queue.get(timeout=1)
+        (s, i, r), inf_time = res_queue.get(timeout=1)
         for k in range(len(s)):
-            if len(S) < len(s):
-                S.append(0)
-                I.append(0)
-                R.append(0)
+            if len(S) == 0:
+                S = [0] * len(s)
+                I = [0] * len(i)
+                R = [0] * len(r)
+
             S[k] += s[k]
             I[k] += i[k]
             R[k] += r[k]
@@ -134,6 +136,60 @@ def run_simulations(file_name):
     print("Finished simulating", file_name)
 
 
+def infection_simulation(file_name):
+    with Pool() as pool:
+        for _ in tqdm(pool.imap_unordered(partial(process_fn, first_infect=0), range(N_inf)), total=N_inf):
+            pass
+
+    infection_time = []
+
+    for _ in range(N_inf):
+        (s, i, r), inf_time = res_queue.get(timeout=1)
+        for k in range(len(inf_time)):
+            if len(infection_time) == 0:
+                infection_time = [0] * len(inf_time)
+            infection_time[k] += inf_time[k]
+
+    for v in range(len(infection_time)):
+        infection_time[v] /= N_inf
+
+    G = nx.DiGraph()
+
+    pos = {}
+    nodes_lbl = {}
+    for n, node in simulator.network.nodes.items():
+        G.add_node(n)
+        pos[n] = [node.position_x, node.position_y]
+        for e in node.adj:
+            nodes_lbl[e.dest] = nodes_lbl.get(e.dest, 0) + 1
+
+    f, ax = plt.subplots()
+    cmap = plt.get_cmap('Reds_r')
+    nx.draw(G, ax=ax, pos=pos, with_labels=True, font_size=4, node_size=20, node_color=infection_time,
+                cmap=cmap, labels=nodes_lbl)
+    f.set_facecolor("gray")
+    ax.axis('off')
+
+    label_text = 'N° simulations: {} - ' \
+                 'Weighted: {} - ' \
+                 'Eng: {}\n' \
+                 'N° common: {} - ' \
+                 'N° influencers: {} - ' \
+                 'N° bots: {}'.format(N_inf, weighted, engagament_val, simulator.network.count_node_type(NodeType.Common),
+                                      simulator.network.count_node_type(NodeType.Influencer),
+                                      simulator.network.count_node_type(NodeType.Bot))
+    plt.title(label_text)
+    norm = mpl.colors.Normalize(vmin=0, vmax=max_time)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    plt.colorbar(sm, ticks=np.linspace(0, max_time, 10),
+                 boundaries=np.arange(0, max_time + 0.1, .1))
+
+    f.savefig("results/graph_" + file_name + ".pdf", facecolor=f.get_facecolor())
+
+    print("Finished simulating infection", file_name)
+
+
 def save_net(filename):
     with open('results/' + filename, 'wb') as handle:
         pickle.dump(simulator.network, handle)
@@ -167,7 +223,8 @@ if __name__ == "__main__":
     engagament_val = 1.0
     engagement_news = calc_engagement
 
-    N = 1
+    N = 800      # number of simulation for the SIR model
+    N_inf = 100  # number of infection simulations
 
     simulator = Simulator(N_common=n_common, N_influencers=n_influencer, N_interests=n_interests,
                           N_bots=n_bots, engagement_news=engagement_news,
@@ -179,6 +236,7 @@ if __name__ == "__main__":
 
     save_net('common')
     run_simulations('common')
+    infection_simulation('common')
 
     steps = 3
 
@@ -188,6 +246,7 @@ if __name__ == "__main__":
         name = 'influencers_' + str(num*(i+1))
         save_net(name)
         run_simulations(name)
+        infection_simulation(name)
 
     num = int(n_bots / steps)
     for i in range(steps):
@@ -195,17 +254,21 @@ if __name__ == "__main__":
         name = 'bots_' + str(num*(i+1))
         save_net(name)
         run_simulations(name)
+        infection_simulation(name)
 
     weighted = True
     run_simulations('weighted_bots')
+    infection_simulation('weighted_bots')
 
     engagament_val = 0.5
     simulator.engagement_news = partial(calc_engagement, initial_val=engagament_val)
     run_simulations('engagement_0.5')
+    infection_simulation('engagement_0.5')
 
     engagament_val = 0.2
     simulator.engagement_news = partial(calc_engagement, initial_val=engagament_val)
     run_simulations('engagement_0.2')
+    infection_simulation('engagement_0.2')
 
     draw_simulation_network_roles(simulator.network)
     draw_degree_distribution(simulator.network)
