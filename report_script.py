@@ -65,6 +65,7 @@ def draw_degree_distribution(network):
     #ax.set_xticks([d + 0.4 for d in deg])
     #ax.set_xticklabels(deg)
     fig.savefig("results/degree.pdf")
+    plt.clf()
 
 
 manager = Manager()
@@ -186,6 +187,7 @@ def infection_simulation(file_name):
                  boundaries=np.arange(0, max_time + 0.1, .1))
 
     f.savefig("results/graph_" + file_name + ".pdf", facecolor=f.get_facecolor())
+    plt.clf()
 
     print("Finished simulating infection", file_name)
 
