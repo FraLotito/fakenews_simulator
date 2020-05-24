@@ -43,7 +43,7 @@ def draw_simulation_network_roles(network):
     f.savefig("results/graph.pdf")
 
 
-def draw_degree_distribution(network):
+def draw_out_degree_distribution(network):
     import collections
     degree_sequence = []
     for n, node in network.nodes.items():
@@ -59,12 +59,30 @@ def draw_degree_distribution(network):
 
     pathlib.Path('results').mkdir(parents=True, exist_ok=True)
 
-    plt.title("Degree Histogram")
+    plt.title("Out-degree Histogram")
     plt.ylabel("Count")
     plt.xlabel("Degree")
     #ax.set_xticks([d + 0.4 for d in deg])
     #ax.set_xticklabels(deg)
-    fig.savefig("results/degree.pdf")
+    fig.savefig("results/out_degree.pdf")
+    plt.clf()
+
+
+def draw_in_degree_distribution(network):
+    degree_sequence = [0] * len(network.nodes)
+    for n, node in network.nodes.items():
+        for edge in node.adj:
+            degree_sequence[edge.dest] += 1
+
+    fig, ax = plt.subplots()
+    plt.hist(degree_sequence, bins=50)
+
+    pathlib.Path('results').mkdir(parents=True, exist_ok=True)
+
+    plt.title("In-degree Histogram")
+    plt.ylabel("Count")
+    plt.xlabel("Degree")
+    fig.savefig("results/in_degree.pdf")
     plt.clf()
 
 
@@ -273,4 +291,5 @@ if __name__ == "__main__":
     infection_simulation('engagement_0.2')
 
     draw_simulation_network_roles(simulator.network)
-    draw_degree_distribution(simulator.network)
+    draw_out_degree_distribution(simulator.network)
+    draw_in_degree_distribution(simulator.network)
