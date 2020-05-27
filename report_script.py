@@ -1,5 +1,5 @@
 from src.simulator import Simulator
-from src.network import NodeType
+from src.network import NodeType, norm_sample
 import copy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -44,17 +44,11 @@ def draw_simulation_network_roles(network):
 
 
 def draw_out_degree_distribution(network):
-    import collections
     degree_sequence = []
     for n, node in network.nodes.items():
         degree_sequence.append(len(node.adj))
 
     fig, ax = plt.subplots()
-    """
-    degreeCount = collections.Counter(degree_sequence)
-    deg, cnt = zip(*degreeCount.items())
-    plt.bar(deg, cnt, width=0.80, color='b')
-    """
     plt.hist(degree_sequence, bins=100)
 
     pathlib.Path('results').mkdir(parents=True, exist_ok=True)
@@ -62,8 +56,6 @@ def draw_out_degree_distribution(network):
     plt.title("Out-degree Histogram")
     plt.ylabel("Count")
     plt.xlabel("Degree")
-    #ax.set_xticks([d + 0.4 for d in deg])
-    #ax.set_xticklabels(deg)
     fig.savefig("results/out_degree.pdf")
     plt.clf()
 
@@ -97,9 +89,9 @@ def process_fn(_, first_infect=None):
     return True
 
 
-def run_simulations(file_name):
+def run_simulations(file_name, first_infect=None):
     with Pool() as pool:
-        for _ in tqdm(pool.imap_unordered(process_fn, range(N)), total=N):
+        for _ in tqdm(pool.imap_unordered(partial(process_fn, first_infect=first_infect), range(N)), total=N):
             pass
 
     S = []
@@ -140,24 +132,33 @@ def run_simulations(file_name):
     plt.axvline(x=xm, color='r', linestyle='dashed')
     plt.legend()
 
+    different_rate_text = ''
+    if new_vuln_avg is not None:
+        different_rate_text = ' - Vuln rate mean: {}'.format(new_vuln_avg)
+    if new_recover_avg is not None:
+        different_rate_text = ' - Recover rate mean: {}'.format(new_recover_avg)
+
     label_text = 'N° simulations: {} - ' \
                  'Weighted: {} - ' \
-                 'Eng: {}\n' \
+                 'Eng: {}{}\n' \
                  'N° common: {} - ' \
                  'N° influencers: {} - ' \
-                 'N° bots: {}'.format(N, weighted, engagament_val, simulator.network.count_node_type(NodeType.Common),
+                 'N° bots: {}'.format(N, weighted, engagament_val, different_rate_text,
+                                      simulator.network.count_node_type(NodeType.Common),
                                       simulator.network.count_node_type(NodeType.Influencer),
                                       simulator.network.count_node_type(NodeType.Bot))
     plt.title(label_text)
+    plt.ylabel("Number of nodes")
+    plt.xlabel("Simulation time")
     plt.savefig('results/' + file_name + '.pdf')
     plt.clf()
 
     print("Finished simulating", file_name)
 
 
-def infection_simulation(file_name):
+def infection_simulation(file_name, first_infect=0):
     with Pool() as pool:
-        for _ in tqdm(pool.imap_unordered(partial(process_fn, first_infect=0), range(N_inf)), total=N_inf):
+        for _ in tqdm(pool.imap_unordered(partial(process_fn, first_infect=first_infect), range(N_inf)), total=N_inf):
             pass
 
     infection_time = []
@@ -189,20 +190,28 @@ def infection_simulation(file_name):
     f.set_facecolor("gray")
     ax.axis('off')
 
+    different_rate_text = ''
+    if new_vuln_avg is not None:
+        different_rate_text = ' - Vuln rate mean: {}'.format(new_vuln_avg)
+    if new_recover_avg is not None:
+        different_rate_text = ' - Recover rate mean: {}'.format(new_recover_avg)
+
     label_text = 'N° simulations: {} - ' \
                  'Weighted: {} - ' \
-                 'Eng: {}\n' \
+                 'Eng: {}{}\n' \
                  'N° common: {} - ' \
                  'N° influencers: {} - ' \
-                 'N° bots: {}'.format(N_inf, weighted, engagament_val, simulator.network.count_node_type(NodeType.Common),
+                 'N° bots: {}'.format(N_inf, weighted, engagament_val, different_rate_text,
+                                      simulator.network.count_node_type(NodeType.Common),
                                       simulator.network.count_node_type(NodeType.Influencer),
                                       simulator.network.count_node_type(NodeType.Bot))
     plt.title(label_text)
     norm = mpl.colors.Normalize(vmin=0, vmax=max_time)
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    plt.colorbar(sm, ticks=np.linspace(0, max_time, 10),
+    cbar = plt.colorbar(sm, ticks=np.linspace(0, max_time, 10),
                  boundaries=np.arange(0, max_time + 0.1, .1))
+    cbar.set_label('Average infection time', rotation=270, labelpad=20)
 
     f.savefig("results/graph_" + file_name + ".pdf", facecolor=f.get_facecolor())
     plt.clf()
@@ -242,6 +251,9 @@ if __name__ == "__main__":
     max_time = 5000
     engagament_val = 1.0
     engagement_news = calc_engagement
+
+    new_vuln_avg = None
+    new_recover_avg = None
 
     N = 800      # number of simulation for the SIR model
     N_inf = 100  # number of infection simulations
@@ -289,6 +301,42 @@ if __name__ == "__main__":
     simulator.engagement_news = partial(calc_engagement, initial_val=engagament_val)
     run_simulations('engagement_0.2')
     infection_simulation('engagement_0.2')
+
+    # run an infection from the influencers with the max out-degree
+    with open('report_results/influencers_10', 'rb') as handle:
+        simulator.network = pickle.load(handle)
+        simulator.N = len(simulator.network.nodes)
+        first_influencer = list(
+            filter(lambda x: simulator.network.nodes[x].type == NodeType.Influencer, simulator.network.nodes))
+        first_influencer = max(first_influencer, key=lambda x: len(simulator.network.nodes[x].adj))
+        run_simulations('from_influencer_max_adj', first_infect=first_influencer)
+        infection_simulation('from_influencer_max_adj', first_infect=first_influencer)
+
+    # run simulations with a high vulnerability rate
+    with open('report_results/bots_10', 'rb') as handle:
+        simulator.network = pickle.load(handle)
+        simulator.N = len(simulator.network.nodes)
+
+        new_vuln_avg = 0.7
+        for i, node in simulator.network.nodes.items():
+            node.vulnerability = norm_sample(avg=new_vuln_avg, var=vulnerability_var, clip1=0, clip2=1)
+
+        run_simulations('vuln_rate_bots_10')
+        infection_simulation('vuln_rate_bots_10')
+        new_vuln_avg = None
+
+    # run simulations with a high recovery rate
+    with open('report_results/bots_10', 'rb') as handle:
+        simulator.network = pickle.load(handle)
+        simulator.N = len(simulator.network.nodes)
+
+        new_recover_avg = 0.7
+        for i, node in simulator.network.nodes.items():
+            node.recover_rate = norm_sample(avg=new_recover_avg, var=recover_var, clip1=0, clip2=1)
+
+        run_simulations('recover_rate_bots_10')
+        infection_simulation('recover_rate_bots_10')
+        new_recover_avg = None
 
     draw_simulation_network_roles(simulator.network)
     draw_out_degree_distribution(simulator.network)

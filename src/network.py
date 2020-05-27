@@ -37,7 +37,7 @@ class Node:
 
         self.score = 0
         self.recover_rate = norm_sample(avg=recover_avg, var=recover_var, clip1=0, clip2=1)
-        self.vulnerability = norm_sample(avg=vuln_avg, var=vuln_var, clip1=-1, clip2=1)
+        self.vulnerability = norm_sample(avg=vuln_avg, var=vuln_var, clip1=0, clip2=1)
         self.reshare_rate = norm_sample(avg=reshare_avg, var=reshare_var, clip1=0, clip2=1)
 
         self.interests = norm_sample(avg=int_avg, var=int_var, n=n_interests, clip1=-1, clip2=1)
