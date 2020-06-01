@@ -6,6 +6,8 @@ import pickle
 from mpldatacursor import datacursor
 from matplotlib.backends.qt_compat import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from math import exp
+from functools import partial
 
 from .network import NodeType
 from .simulator import Simulator
@@ -476,6 +478,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.network_canvas.draw()
 
+    def calc_engagement(self, t, max_time, initial_val=1.0):
+        return initial_val * exp(-1 / (max_time / 2) * t)
+
     def run_simulation(self):
         if self.simulator is None:
             QtWidgets.QMessageBox.about(self, "Error", "No network created!")
@@ -485,7 +490,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.sim_time = int(self.sim_time_ui.text())
         self.engagement_news = float(self.engagement_news_ui.text())
         self.recovered_debunking = self.rec_deb_ui.isChecked()
-        self.simulator.engagement_news = self.engagement_news
+        self.simulator.engagement_news = partial(self.calc_engagement, initial_val=self.engagement_news,
+                                                 max_time=self.sim_time)
+        print(self.sim_time)
 
         self.sim_results = self.simulator.simulate(self.sim_time, SIR=self.SIR, recovered_debunking=self.recovered_debunking,
                                                    weighted=self.weighted)
@@ -507,7 +514,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.sim_time = int(self.sim_time_ui.text())
             self.engagement_news = float(self.engagement_news_ui.text())
             self.recovered_debunking = self.rec_deb_ui.isChecked()
-            self.simulator.engagement_news = self.engagement_news
+            self.simulator.engagement_news = partial(self.calc_engagement, initial_val=self.engagement_news,
+                                                     max_time=self.sim_time)
 
             self.progress_bar.setValue(0)
             self.n_sim_results = []
