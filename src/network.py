@@ -50,6 +50,7 @@ class Node:
         self.position_y = np.random.uniform(0, 1)
         self.message_queue = []
 
+        self.recovery_time = None
         self.infection_time = None
         if node_type == NodeType.Bot:
             self.infection_time = 0
@@ -67,6 +68,12 @@ class Node:
             return not_infect_val
         else:
             return self.infection_time
+
+    def get_recovery_time(self, not_recovered_val):
+        if self.recovery_time is None:
+            return not_recovered_val
+        else:
+            return self.recovery_time
 
     def update(self):
         s = sum(self.message_queue)
@@ -287,5 +294,13 @@ class Network:
 
         for i, n in self.nodes.items():
             nodes[i] = n.get_infection_time(max_time)
+
+        return nodes
+
+    def get_nodes_recovery_time_map(self, max_time):
+        nodes = {}
+
+        for i, n in self.nodes.items():
+            nodes[i] = n.get_recovery_time(max_time)
 
         return nodes

@@ -107,6 +107,8 @@ class Simulator:
 
             if self.sim_network.nodes[node_id].infection_time is None and score == 1:
                 self.sim_network.nodes[node_id].infection_time = time
+            elif self.sim_network.nodes[node_id].recovery_time is None and score == -1:
+                self.sim_network.nodes[node_id].recovery_time = time
 
             if score == 1 or (score == -1 and recovered_debunking):
                 reshare_rate = self.sim_network.nodes[node_id].reshare_rate
@@ -126,7 +128,8 @@ class Simulator:
         if return_nets:
             return hist_status
         else:
-            return (s, i, r), self.sim_network.get_nodes_infection_time_map(max_time)
+            return (s, i, r), self.sim_network.get_nodes_infection_time_map(max_time), \
+                        self.sim_network.get_nodes_recovery_time_map(max_time)
 
     def propagate(self, dest, score, weight, SIR):
         if SIR:
