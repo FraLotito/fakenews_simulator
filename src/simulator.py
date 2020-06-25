@@ -45,7 +45,7 @@ class Simulator:
         self.network.generate_bots(n)
         self.N = len(self.network.nodes)
 
-    def first_population_queue(self, first_infect):
+    def first_population_queue(self, first_infect, with_temp_dyn):
         order = []
         self.events_queue.put((0, first_infect))
         for i in range(self.N):
@@ -53,7 +53,8 @@ class Simulator:
                 order.append(i)
         shuffle(order)
         for i in range(self.N - 1):
-            self.events_queue.put((expovariate(1 / 16), order[i]))
+            next_time = expovariate(1 / 16) if with_temp_dyn else 16
+            self.events_queue.put((next_time, order[i]))
 
     def initial_infection(self, first_infect):
         if first_infect is None:
@@ -64,12 +65,12 @@ class Simulator:
         return first_infect
 
     def simulate(self, max_time, recovered_debunking=False, SIR=False, first_infect=None, return_nets=True,
-                 weighted=True):
+                 weighted=True, with_temp_dyn=True):
         self.events_queue = PriorityQueue()
         self.sim_network = copy.deepcopy(self.network)
         first_infect = self.initial_infection(first_infect)
         self.sim_network.infected_node = first_infect
-        self.first_population_queue(first_infect)
+        self.first_population_queue(first_infect, with_temp_dyn)
 
         hist_status = []
         # Add simulation checkpoint
@@ -132,11 +133,14 @@ class Simulator:
                     if p < reshare_rate and dest != first_infect:
                         self.propagate(dest, score, weight, SIR=SIR)
 
-            # se un nodo è un bot, allora si collega più spesso
-            if self.sim_network.nodes[node_id].type == NodeType.Bot:
-                self.events_queue.put((time + expovariate(1 / 4), node_id))
+            if with_temp_dyn:
+                # se un nodo è un bot, allora si collega più spesso
+                if self.sim_network.nodes[node_id].type == NodeType.Bot:
+                    self.events_queue.put((time + expovariate(1 / 4), node_id))
+                else:
+                    self.events_queue.put((time + expovariate(1 / 16), node_id))
             else:
-                self.events_queue.put((time + expovariate(1 / 16), node_id))
+                self.events_queue.put((time + 16, node_id))
 
         if return_nets:
             return hist_status

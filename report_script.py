@@ -11,6 +11,7 @@ import pathlib
 from math import exp
 from functools import partial
 import pickle
+import json
 
 
 def draw_simulation_network_roles(network):
@@ -82,41 +83,50 @@ manager = Manager()
 res_queue = manager.Queue()
 
 
-def process_fn(i, first_infect=None):
-    simulator = simulators[i % N_networks]
+def process_fn(i, first_infect=None, with_temp_dyn=True):
+    if first_infect is None:
+        simulator = simulators[i % N_networks]
+    else:
+        simulator = simulators[0]
     s = copy.deepcopy(simulator)
     results = s.simulate(max_time, recovered_debunking, SIR, first_infect=first_infect, return_nets=False,
-                         weighted=weighted)
+                         weighted=weighted, with_temp_dyn=with_temp_dyn)
     res_queue.put(results)
     return True
 
 
-def run_simulations(file_name, first_infect=None):
+def run_simulations(file_name, first_infect=None, with_temp_dyn=True):
     N = N_sim * N_networks
     with Pool() as pool:
-        for _ in tqdm(pool.imap_unordered(partial(process_fn, first_infect=first_infect), range(N)), total=N):
+        for _ in tqdm(pool.imap_unordered(partial(process_fn, first_infect=first_infect,
+                                                  with_temp_dyn=with_temp_dyn), range(N)), total=N):
             pass
 
     S = []
     I = []
     R = []
 
+    CDF_I = []
+
     for _ in range(N):
-        (s, i, r), inf_time, rec_time = res_queue.get(timeout=1)
+        (s, i, r, cdf_i), inf_time, rec_time = res_queue.get(timeout=1)
         for k in range(len(s)):
             if len(S) == 0:
                 S = [0] * len(s)
                 I = [0] * len(i)
                 R = [0] * len(r)
+                CDF_I = [0] * len(cdf_i)
 
             S[k] += s[k]
             I[k] += i[k]
             R[k] += r[k]
+            CDF_I[k] += cdf_i[k]
 
     for v in range(len(S)):
         S[v] /= N
         I[v] /= N
         R[v] /= N
+        CDF_I[v] /= N
 
     m = max(I)
     xm = np.argmax(I) * 20
@@ -146,30 +156,81 @@ def run_simulations(file_name, first_infect=None):
                  'Eng: {}{}\n' \
                  'N° common: {} - ' \
                  'N° influencers: {} - ' \
-                 'N° bots: {}'.format(N, weighted, engagament_val, different_rate_text,
+                 'N° bots: {} - ' \
+                 'N° antibots: {}'.format(N, weighted, engagament_val, different_rate_text,
                                       simulators[0].network.count_node_type(NodeType.Common),
                                       simulators[0].network.count_node_type(NodeType.Influencer),
-                                      simulators[0].network.count_node_type(NodeType.Bot))
+                                      simulators[0].network.count_node_type(NodeType.Bot),
+                                      simulators[0].network.count_node_type(NodeType.Antibot))
     plt.title(label_text)
     plt.ylabel("Number of nodes")
     plt.xlabel("Simulation time")
     plt.savefig('results/' + file_name + '.pdf')
     plt.clf()
 
+    data = {
+        'S': S,
+        'I': I,
+        'R': R
+    }
+    with open('results/json/' + file_name + '.json', 'w') as outfile:
+        json.dump(data, outfile)
+
     print("Finished simulating", file_name)
+    return CDF_I[:-1], R
 
 
-def infection_simulation(file_name, first_infect=0):
+def plot_cdf_simulations(CDF_results):
+    times = [20 * i for i in range(len(CDF_results[0]['results'][0]))]
+
+    pathlib.Path('results').mkdir(parents=True, exist_ok=True)
+
+    lbl = "_weighted" if weighted else ""
+    lbl += "_with_tmp_dyn" if 'with_temp_dyn' in CDF_results[0] else ""
+    with open('results/json/cdfs' + lbl + '.json', 'w') as outfile:
+        json.dump(CDF_results, outfile)
+
+    for res in CDF_results:
+        lbl_td = "tmp dyn:{}".format(res['with_temp_dyn']) if 'with_temp_dyn' in res else ""
+        plt.plot(times, res['results'][0], label="infected bots:{} antibots:{} {}".format(
+            res['bots'], res['antibots'], lbl_td
+        ))
+        plt.plot(times, res['results'][1], label="recovered bots:{} antibots:{} {}".format(
+            res['bots'], res['antibots'], lbl_td
+        ))
+    plt.legend()
+
+    different_rate_text = ''
+    if new_vuln_avg is not None:
+        different_rate_text = ' - Vuln rate mean: {}'.format(new_vuln_avg)
+    if new_recover_avg is not None:
+        different_rate_text = ' - Recover rate mean: {}'.format(new_recover_avg)
+
+    N = N_sim * N_networks
+    label_text = 'CDF - N° sims: {} - ' \
+                 'Weighted: {} - ' \
+                 'Eng: {}{}'.format(N, weighted, engagament_val, different_rate_text)
+    plt.title(label_text)
+    plt.ylabel("Number of nodes")
+    plt.xlabel("Simulation time")
+    plt.savefig('results/CDFs' + lbl + '.pdf')
+    plt.clf()
+
+    print("Finished simulating", "CDFs")
+
+
+def infection_simulation(file_name, first_infect=0, with_temp_dyn=True):
     simulator = simulators[0]
     with Pool() as pool:
-        for _ in tqdm(pool.imap_unordered(partial(process_fn, first_infect=first_infect), range(N_inf)), total=N_inf):
+        for _ in tqdm(pool.imap_unordered(partial(process_fn, first_infect=first_infect,
+                                                  with_temp_dyn=with_temp_dyn), range(N_inf)), total=N_inf):
             pass
 
     infection_time = []
     recovery_time = []
 
     for _ in range(N_inf):
-        (s, i, r), inf_time, rec_time = res_queue.get(timeout=1)
+        (s, i, r, _), inf_time, rec_time = res_queue.get(timeout=1)
         for k in range(len(inf_time)):
             if len(infection_time) == 0:
                 infection_time = [0] * len(inf_time)
@@ -185,6 +246,8 @@ def infection_simulation(file_name, first_infect=0):
         recovery_time[v] /= N_inf
 
     def save_plot(data, title, cmap):
+        with open('results/json/' + title + '.json', 'w') as outfile:
+            json.dump(data, outfile)
 
         G = nx.DiGraph()
 
@@ -207,15 +270,17 @@ def infection_simulation(file_name, first_infect=0):
         if new_recover_avg is not None:
             different_rate_text = ' - Recover rate mean: {}'.format(new_recover_avg)
 
-        label_text = 'N° simulations: {} - ' \
+        label_text = 'N° sims: {} - ' \
                      'Weighted: {} - ' \
                      'Eng: {}{}\n' \
                      'N° common: {} - ' \
-                     'N° influencers: {} - ' \
-                     'N° bots: {}'.format(N_inf, weighted, engagament_val, different_rate_text,
+                     'N° inf: {} - ' \
+                     'N° bots: {} - ' \
+                     'N° antibots: {}'.format(N_inf, weighted, engagament_val, different_rate_text,
                                           simulator.network.count_node_type(NodeType.Common),
                                           simulator.network.count_node_type(NodeType.Influencer),
-                                          simulator.network.count_node_type(NodeType.Bot))
+                                          simulator.network.count_node_type(NodeType.Bot),
+                                          simulator.network.count_node_type(NodeType.Antibot))
         plt.title(label_text)
         norm = mpl.colors.Normalize(vmin=0, vmax=max_time)
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -227,17 +292,36 @@ def infection_simulation(file_name, first_infect=0):
         f.savefig("results/graph_" + title + '_' + file_name + ".pdf", facecolor=f.get_facecolor())
         plt.clf()
 
-    save_plot(infection_time, 'infection', plt.get_cmap('hot'))
+    save_plot(infection_time, 'infection', plt.get_cmap('plasma'))
     save_plot(recovery_time, 'recovery', plt.get_cmap('viridis'))
 
     print("Finished simulating infection", file_name)
 
 
+def calc_avg_degrees():
+    in_degree = {}  # keys are degree
+    out_degree = {}
+    for sim in simulators:
+        in_degree_sequence = [0] * len(sim.network.nodes)
+        for n, node in sim.network.nodes.items():
+            out = len(node.adj)
+            for edge in node.adj:
+                in_degree_sequence[edge.dest] += 1
+            out_degree[out] = out_degree.get(out, 0) + 1
+        for inc in in_degree_sequence:
+            in_degree[inc] = in_degree.get(inc, 0) + 1
+
+    for inc in in_degree:
+        in_degree[inc] /= len(simulators)
+    for out in out_degree:
+        out_degree[out] /= len(simulators)
+    return in_degree, out_degree
+
+
 def save_net(filename):
     if save_nets:
-        for sim in simulators:
-            with open('results/' + filename, 'wb') as handle:
-                pickle.dump(sim.network, handle)
+        with open('results/' + filename, 'wb') as handle:
+            pickle.dump(simulators, handle)
 
 
 def calc_engagement(t, initial_val=1.0):
@@ -246,7 +330,7 @@ def calc_engagement(t, initial_val=1.0):
 
 def create_network(_):
     res_queue.put(Simulator(N_common=n_common, N_influencers=n_influencer, N_interests=n_interests,
-                            N_bots=n_bots, engagement_news=None,
+                            N_bots=n_bots, engagement_news=None, N_antibots=n_antibots,
                             random_const=random_const, random_phy_const=random_phy_const,
                             recover_avg=recover_avg, recover_var=recover_var,
                             vuln_avg=vulnerability_avg, vuln_var=vulnerability_var,
@@ -261,6 +345,7 @@ if __name__ == "__main__":
     n_common = 200 * const
     n_influencer = 3 * const
     n_bots = 3 * const
+    n_antibots = 3 * const
     n_interests = 5
     vulnerability_avg = 0.5
     vulnerability_var = 0.2
@@ -284,11 +369,13 @@ if __name__ == "__main__":
 
     save_nets = False
 
-    N_sim = 8  # number of simulation for the SIR model
-    N_networks = 100  # number of different networks to try
-    N_inf = 100  # number of infection simulations
+    N_sim = 5  # number of simulation for the SIR model
+    N_networks = 4  # number of different networks to try
+    N_inf = 20  # number of infection simulations
 
     simulators = []
+    CDF_results = []
+    degrees = []
 
     with Pool() as pool:
         for _ in tqdm(pool.imap_unordered(create_network, range(N_networks)), total=N_networks):
@@ -300,8 +387,24 @@ if __name__ == "__main__":
         simulators.append(sim)
 
     save_net('common')
-    run_simulations('common')
+    CDF_r = run_simulations('common')
+    """
+    CDF_results.append({
+        'influencers': 0,
+        'bots': 0,
+        'antibots': 0,
+        'results': CDF_r
+    })
+    """
     infection_simulation('common')
+    in_degree, out_degree = calc_avg_degrees()
+    degrees.append({
+        'influencers': 0,
+        'bots': 0,
+        'antibots': 0,
+        'in_degree': in_degree,
+        'out_degree': out_degree
+    })
 
     steps = 3
 
@@ -311,9 +414,28 @@ if __name__ == "__main__":
             sim.add_influencers(num)
         name = 'influencers_' + str(num * (i + 1))
         save_net(name)
-        run_simulations(name)
+        CDF_r = run_simulations(name)
+        """
+        CDF_results.append({
+            'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+            'bots': 0,
+            'antibots': 0,
+            'results': CDF_r
+        })
+        """
         infection_simulation(name)
+        in_degree, out_degree = calc_avg_degrees()
+        degrees.append({
+            'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+            'bots': 0,
+            'antibots': 0,
+            'in_degree': in_degree,
+            'out_degree': out_degree
+        })
         break
+
+    # Temporal dynamics results
+    CDF_results_temp = []
 
     saved_10_bots_sims = []
     num = int(n_bots / steps)
@@ -324,13 +446,119 @@ if __name__ == "__main__":
             saved_10_bots_sims = copy.deepcopy(simulators)
         name = 'bots_' + str(num * (i + 1))
         save_net(name)
-        run_simulations(name)
+        CDF_r = run_simulations(name)
+        """
+        CDF_results.append({
+            'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+            'bots': simulators[0].network.count_node_type(NodeType.Bot),
+            'antibots': 0,
+            'results': CDF_r
+        })
+        """
         infection_simulation(name)
+        in_degree, out_degree = calc_avg_degrees()
+        degrees.append({
+            'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+            'bots': simulators[0].network.count_node_type(NodeType.Bot),
+            'antibots': 0,
+            'in_degree': in_degree,
+            'out_degree': out_degree
+        })
+
+        CDF_results_temp.append({
+            'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+            'bots': simulators[0].network.count_node_type(NodeType.Bot),
+            'antibots': 0,
+            'with_temp_dyn': True,
+            'results': CDF_r
+        })
+        name += '_without_temp_dyn'
+        CDF_r = run_simulations(name, with_temp_dyn=False)
+        CDF_results_temp.append({
+            'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+            'bots': simulators[0].network.count_node_type(NodeType.Bot),
+            'antibots': 0,
+            'with_temp_dyn': False,
+            'results': CDF_r
+        })
         break
+
+
+    # run simulations with some antibots
+    simulators = copy.deepcopy(saved_10_bots_sims)
+
+    num = int(n_antibots / steps)
+    for i in range(steps):
+        for sim in simulators:
+            sim.add_antibots(num)
+        name = 'antibot_' + str(num * (i + 1))
+        save_net(name)
+        CDF_r = run_simulations(name)
+        CDF_results.append({
+            'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+            'bots': simulators[0].network.count_node_type(NodeType.Bot),
+            'antibots': simulators[0].network.count_node_type(NodeType.Antibot),
+            'results': CDF_r
+        })
+        infection_simulation(name)
+        in_degree, out_degree = calc_avg_degrees()
+        degrees.append({
+            'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+            'bots': simulators[0].network.count_node_type(NodeType.Bot),
+            'antibots': simulators[0].network.count_node_type(NodeType.Antibot),
+            'in_degree': in_degree,
+            'out_degree': out_degree
+        })
+        if i == 0:
+            CDF_results_temp.append({
+                'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+                'bots': simulators[0].network.count_node_type(NodeType.Bot),
+                'antibots': simulators[0].network.count_node_type(NodeType.Antibot),
+                'with_temp_dyn': True,
+                'results': CDF_r
+            })
+            name += '_without_temp_dyn'
+            CDF_r = run_simulations(name, with_temp_dyn=False)
+            CDF_results_temp.append({
+                'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+                'bots': simulators[0].network.count_node_type(NodeType.Bot),
+                'antibots': simulators[0].network.count_node_type(NodeType.Antibot),
+                'with_temp_dyn': False,
+                'results': CDF_r
+            })
+            infection_simulation(name, with_temp_dyn=False)
+    plot_cdf_simulations(CDF_results)
+    plot_cdf_simulations(CDF_results_temp)
+
+    # save in and out degrees to json
+    with open('results/json/degrees.json', 'w') as outfile:
+        json.dump(degrees, outfile)
+
 
     weighted = True
     run_simulations('weighted_bots')
     infection_simulation('weighted_bots')
+
+    # run weighted simulations with some antibots
+    simulators = copy.deepcopy(saved_10_bots_sims)
+    CDF_results = []
+
+    num = int(n_antibots / steps)
+    for i in range(steps):
+        for sim in simulators:
+            sim.add_antibots(num)
+        name = 'antibot_weighted_' + str(num * (i + 1))
+        save_net(name)
+        CDF_r = run_simulations(name)
+        CDF_results.append({
+            'influencers': simulators[0].network.count_node_type(NodeType.Influencer),
+            'bots': simulators[0].network.count_node_type(NodeType.Bot),
+            'antibots': simulators[0].network.count_node_type(NodeType.Antibot),
+            'results': CDF_r
+        })
+        infection_simulation(name)
+    plot_cdf_simulations(CDF_results)
+
 
     engagament_val = 0.5
     for sim in simulators:
@@ -343,6 +571,7 @@ if __name__ == "__main__":
         sim.engagement_news = partial(calc_engagement, initial_val=engagament_val)
     run_simulations('engagement_0.2')
     infection_simulation('engagement_0.2')
+
 
     """
     # run an infection from the influencers with the max out-degree
@@ -380,6 +609,3 @@ if __name__ == "__main__":
     infection_simulation('recover_rate_bots_10')
     new_recover_avg = None
 
-    # draw_simulation_network_roles(simulators[0].network)
-    # draw_out_degree_distribution(simulator.network)
-    # draw_in_degree_distribution(simulator.network)
