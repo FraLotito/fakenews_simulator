@@ -17,7 +17,7 @@ class NodeType(IntEnum):
     Common = 0,
     Conspirator = 1,
     Influencer = 2,
-    Debunker = 3,
+    Antibot = 3,  # debunker
     Bot = 4
 
 
@@ -144,6 +144,7 @@ class Network:
         self.N_common = N_common
         self.N_influencers = N_influencers
         self.N_bots = N_bots
+        self.N_antibots = 0
 
         self.nodes = {}
         self.available_id = 0
@@ -166,6 +167,10 @@ class Network:
 
         if node_type == NodeType.Bot:
             node.reshare_rate = 1
+
+        if node_type == NodeType.Antibot:
+            node.vulnerability = 0
+            node.recover_rate = 1
 
         return idx
 
@@ -206,7 +211,7 @@ class Network:
 
     # TODO: fare attenzione alle random_const (ci sono costanti moltiplicative)
 
-    def generate_influencers(self, random_const, random_phy_const, lim=None):
+    def generate_influencers(self, random_const, random_phy_const, lim=None, antibot=False):
 
         def add_proximity_edge(idx_a, idx_b, dist, random_const):
             prox = (1 - dist)
@@ -223,8 +228,11 @@ class Network:
         if lim is None:
             lim = self.N_influencers
 
+        node_type = NodeType.Influencer
+        if antibot:
+            node_type = NodeType.Antibot
         while n < lim:
-            idx = self.gen_node(NodeType.Influencer)
+            idx = self.gen_node(node_type)
 
             for b in self.nodes.keys():
                 if idx == b:

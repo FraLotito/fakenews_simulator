@@ -6,12 +6,14 @@ import copy
 
 
 class Simulator:
-    def __init__(self, N_common, N_influencers, N_bots, N_interests, random_const, random_phy_const, engagement_news,
-                 int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg, reshare_var):
+    def __init__(self, N_common, N_influencers, N_bots, N_antibots, N_interests, random_const, random_phy_const,
+                 engagement_news, int_avg, int_var, recover_avg, recover_var, vuln_avg, vuln_var, reshare_avg,
+                 reshare_var):
 
         self.N_common = N_common
         self.N_influencers = N_influencers
         self.N_bots = N_bots
+        self.N_antibots = N_antibots
         self.random_const = random_const
         self.random_phy_const = random_phy_const
         self.engagement_news = engagement_news
@@ -29,6 +31,12 @@ class Simulator:
         if n is None:
             n = self.N_influencers
         self.network.generate_influencers(self.random_const, self.random_phy_const, n)
+        self.N = len(self.network.nodes)
+
+    def add_antibots(self, n=None):
+        if n is None:
+            n = self.N_antibots
+        self.network.generate_influencers(self.random_const, self.random_phy_const, n, antibot=True)
         self.N = len(self.network.nodes)
 
     def add_bots(self, n=None):
@@ -73,6 +81,9 @@ class Simulator:
         i = []
         r = []
 
+        cdf_i = [[0] * len(self.sim_network.nodes)]
+        cdf_i[0][first_infect] = 1
+
         while time < max_time:
             t, node_id = self.events_queue.get()
 
@@ -83,10 +94,12 @@ class Simulator:
                     S = 0
                     I = 0
                     R = 0
+                    cdf_i.append(copy.deepcopy(cdf_i[-1]))
                     for k in self.sim_network.nodes.keys():
                         if self.sim_network.nodes[k].type == NodeType.Common:
                             if self.sim_network.nodes[k].score == 1:
                                 I += 1
+                                cdf_i[-1][k] = 1
                             elif self.sim_network.nodes[k].score == 0:
                                 S += 1
                             else:
@@ -128,7 +141,8 @@ class Simulator:
         if return_nets:
             return hist_status
         else:
-            return (s, i, r), self.sim_network.get_nodes_infection_time_map(max_time), \
+            cdf_i = list(map(lambda x: sum(x), cdf_i))
+            return (s, i, r, cdf_i), self.sim_network.get_nodes_infection_time_map(max_time), \
                         self.sim_network.get_nodes_recovery_time_map(max_time)
 
     def propagate(self, dest, score, weight, SIR):
