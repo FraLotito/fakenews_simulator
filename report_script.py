@@ -185,7 +185,7 @@ def infection_simulation(file_name, first_infect=0):
         recovery_time[v] /= N_inf
 
     def save_plot(data, title, cmap):
-        print(title, np.mean(data), np.std(data), np.min(data), np.max(data))
+
         G = nx.DiGraph()
 
         pos = {}
@@ -198,7 +198,7 @@ def infection_simulation(file_name, first_infect=0):
 
         f, ax = plt.subplots()
         nx.draw(G, ax=ax, pos=pos, with_labels=True, font_size=4, node_size=20, node_color=data,
-                cmap=cmap, labels=nodes_lbl)
+                cmap=cmap, vmin=0, vmax=max_time, labels=nodes_lbl)
         ax.axis('off')
 
         different_rate_text = ''
