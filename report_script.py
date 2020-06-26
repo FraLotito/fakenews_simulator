@@ -139,9 +139,9 @@ def run_simulations(file_name, first_infect=None, with_temp_dyn=True):
     pathlib.Path('results').mkdir(parents=True, exist_ok=True)
 
     plt.plot(times, S, label="S")
-    plt.plot(times, I, label="I")
-    plt.plot(times, R, label="R")
-    plt.plot(times, M, color="r", label="Max I")
+    plt.plot(times, I, label="B")
+    plt.plot(times, R, label="FC")
+    plt.plot(times, M, color="r", label="Max B")
     plt.axvline(x=xm, color='r', linestyle='dashed')
     plt.legend()
 
@@ -188,16 +188,16 @@ def plot_cdf_simulations(CDF_results):
     pathlib.Path('results').mkdir(parents=True, exist_ok=True)
 
     lbl = "_weighted" if weighted else ""
-    lbl += "_with_tmp_dyn" if 'with_temp_dyn' in CDF_results[0] else ""
+    lbl += "_without_tmp_dyn" if 'with_temp_dyn' in CDF_results[0] else ""
     with open('results/json/cdfs' + lbl + '.json', 'w') as outfile:
         json.dump(CDF_results, outfile)
 
     for res in CDF_results:
         lbl_td = "tmp dyn:{}".format(res['with_temp_dyn']) if 'with_temp_dyn' in res else ""
-        plt.plot(times, res['results'][0], label="infected bots:{} antibots:{} {}".format(
+        plt.plot(times, res['results'][0], label="believer bots:{} antibots:{} {}".format(
             res['bots'], res['antibots'], lbl_td
         ))
-        plt.plot(times, res['results'][1], label="recovered bots:{} antibots:{} {}".format(
+        plt.plot(times, res['results'][1], label="fact checker bots:{} antibots:{} {}".format(
             res['bots'], res['antibots'], lbl_td
         ))
     plt.legend()
@@ -539,7 +539,31 @@ if __name__ == "__main__":
     with open('results/json/degrees.json', 'w') as outfile:
         json.dump(degrees, outfile)
 
+    def plot_degrees(key_val, title):
+        for i, value in enumerate(reversed(degrees)):
+            if i in [1, 2, 5]:
+                continue
+            x = []
+            height = []
+            for v in sorted(value[key_val].keys(), key=lambda x: int(x)):
+                x.append(int(v))
+                height.append(value[key_val][v])
+            plt.bar(x, height, label="infl: {} - bots: {} - antibots: {}".format(
+                value['influencers'], value['bots'], value['antibots']))
 
+        plt.title(title)
+        plt.legend()
+        plt.ylabel("Count")
+        plt.xlabel("Degree")
+        plt.savefig('results/' + key_val + '_distributions.pdf')
+        plt.clf()
+
+        plt.close('all')
+
+    plot_degrees('in_degree', 'In-degree distribution')
+    plot_degrees('out_degree', 'Out-degree distribution')
+
+    # Use a weighted graph
     weighted = True
     run_simulations('weighted_bots')
     infection_simulation('weighted_bots')
@@ -564,7 +588,7 @@ if __name__ == "__main__":
         infection_simulation(name)
     plot_cdf_simulations(CDF_results)
 
-
+    # use different engagement values
     engagament_val = 0.5
     for sim in simulators:
         sim.engagement_news = partial(calc_engagement, initial_val=engagament_val)
