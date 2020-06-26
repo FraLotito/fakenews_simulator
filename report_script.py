@@ -176,6 +176,8 @@ def run_simulations(file_name, first_infect=None, with_temp_dyn=True):
     with open('results/json/' + file_name + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
+    plt.close('all')
+
     print("Finished simulating", file_name)
     return CDF_I[:-1], R
 
@@ -215,6 +217,8 @@ def plot_cdf_simulations(CDF_results):
     plt.xlabel("Simulation time")
     plt.savefig('results/CDFs' + lbl + '.pdf')
     plt.clf()
+
+    plt.close('all')
 
     print("Finished simulating", "CDFs")
 
@@ -294,6 +298,8 @@ def infection_simulation(file_name, first_infect=0, with_temp_dyn=True):
 
     save_plot(infection_time, 'infection', plt.get_cmap('plasma'))
     save_plot(recovery_time, 'recovery', plt.get_cmap('viridis'))
+
+    plt.close('all')
 
     print("Finished simulating infection", file_name)
 
