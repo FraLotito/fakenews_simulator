@@ -367,11 +367,11 @@ if __name__ == "__main__":
     new_vuln_avg = None
     new_recover_avg = None
 
-    save_nets = False
+    save_nets = True
 
-    N_sim = 5  # number of simulation for the SIR model
-    N_networks = 4  # number of different networks to try
-    N_inf = 20  # number of infection simulations
+    N_sim = 8  # number of simulation for the SIR model
+    N_networks = 50  # number of different networks to try
+    N_inf = 100  # number of infection simulations
 
     simulators = []
     CDF_results = []
@@ -432,7 +432,6 @@ if __name__ == "__main__":
             'in_degree': in_degree,
             'out_degree': out_degree
         })
-        break
 
     # Temporal dynamics results
     CDF_results_temp = []
