@@ -330,6 +330,12 @@ def save_net(filename):
             pickle.dump(simulators, handle)
 
 
+def load_net(filename):
+    if save_nets:
+        with open('results/' + filename, 'rb') as handle:
+            return pickle.load(handle)
+
+
 def calc_engagement(t, initial_val=1.0):
     return initial_val * exp(-1 / (max_time / 2) * t)
 
@@ -616,6 +622,7 @@ if __name__ == "__main__":
     """
     # run simulations with a high vulnerability rate
     simulators = copy.deepcopy(saved_10_bots_sims)
+    engagament_val = 1.0
 
     new_vuln_avg = 0.7
     for sim in simulators:
